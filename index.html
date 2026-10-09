@@ -3,41 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tiempos & Zonas en Vivo</title>
+  <title>Tiempos, Zonas & Espectáculos</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen pb-16 antialiased">
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-16 antialiased selection:bg-indigo-500 selection:text-white">
 
-  <!-- Banner de reaperturas instantáneas (Caza-colas) -->
-  <div id="reopeningBanner" class="hidden bg-emerald-600 text-white px-4 py-2 text-xs font-semibold flex items-center justify-between sticky top-0 z-40 shadow-lg animate-pulse">
+  <!-- Banner de reaperturas instantáneas ("Caza-Colas") -->
+  <div id="reopeningBanner" class="hidden bg-emerald-600 text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between sticky top-0 z-50 shadow-xl animate-pulse">
     <div class="flex items-center gap-2">
       <span class="text-base">🚨</span>
-      <span id="reopeningText">¡Atracción reabierta!</span>
+      <span id="reopeningText">¡Atracción acaba de reabrir!</span>
     </div>
-    <button onclick="document.getElementById('reopeningBanner').classList.add('hidden')" class="text-white/80 hover:text-white text-base font-bold ml-2">×</button>
+    <button onclick="document.getElementById('reopeningBanner').classList.add('hidden')" class="text-white/80 hover:text-white text-base font-bold ml-2">✕</button>
   </div>
 
   <!-- Cabecera fija -->
-  <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-lg">
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-lg">
     <div class="max-w-md mx-auto flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <span class="text-xl">🎢</span>
         <div>
-          <h1 class="text-base font-bold leading-tight tracking-tight">WaitTimes Live</h1>
+          <h1 class="text-sm font-bold tracking-tight">WaitTimes Pro</h1>
           <p id="lastUpdateTxt" class="text-[10px] text-slate-400">Iniciando...</p>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <!-- Selector de Vista (Lista vs Zonas) -->
-        <button id="viewToggleBtn" onclick="toggleViewMode()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-          <span id="viewIcon">🗺️</span>
-          <span id="viewLabel">Zonas</span>
+      <div class="flex items-center gap-1.5">
+        <!-- Alternar vista Zonas vs Lista -->
+        <button id="viewToggleBtn" onclick="toggleViewMode()" class="text-xs bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 px-2.5 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+          <span id="viewIcon">📋</span>
+          <span id="viewLabel">Lista</span>
         </button>
-        <button id="refreshBtn" onclick="cargarTodo()" class="flex items-center gap-1 text-xs bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium px-3 py-1.5 rounded-xl transition shadow">
+        <!-- Botón refrescar -->
+        <button id="refreshBtn" onclick="cargarTodo()" class="text-xs bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium p-2 rounded-xl transition shadow">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
@@ -50,7 +51,7 @@
 
     <!-- Selector de Parque -->
     <div>
-      <select id="parkSelect" onchange="cargarTodo()" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-3.5 py-2.5 text-sm font-medium text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner">
+      <select id="parkSelect" onchange="cargarTodo()" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner">
         <option value="5adbd2f7-3694-4d23-aaec-4037a056573f">Parque Warner Madrid</option>
         <option value="1ea86991-e2c2-4771-8a32-c6e14c8298a9">Parque de Atracciones de Madrid</option>
         <option value="dae968d5-630d-4719-8b06-3d107e944401">Disneyland Park (París)</option>
@@ -58,20 +59,20 @@
       </select>
     </div>
 
-    <!-- Panel de Estado, Horario y Contador del Día -->
-    <div class="bg-gradient-to-br from-slate-900 to-slate-850 border border-slate-800 rounded-2xl p-3 shadow-sm space-y-2.5">
+    <!-- Panel de Horario y Resumen de Estado -->
+    <div class="bg-gradient-to-br from-slate-900 to-slate-850 border border-slate-800 rounded-2xl p-3 shadow-sm space-y-2">
       <div class="flex items-center justify-between text-xs">
         <div class="flex items-center gap-1.5 font-medium text-slate-300">
           <span>🕒</span>
-          <span id="scheduleText">Cargando horario...</span>
+          <span id="scheduleText">Cargando horario oficial...</span>
         </div>
-        <label class="flex items-center gap-1.5 text-[11px] text-slate-400 cursor-pointer">
+        <label class="flex items-center gap-1 text-[11px] text-slate-400 cursor-pointer">
           <input type="checkbox" id="autoRefreshCheck" onchange="toggleAutoRefresh()" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
           Auto 60s
         </label>
       </div>
 
-      <!-- Métricas -->
+      <!-- Métricas del parque -->
       <div class="grid grid-cols-4 gap-1.5 pt-1 border-t border-slate-800/80 text-center text-[10px]">
         <div class="bg-emerald-950/30 border border-emerald-900/40 rounded-xl py-1 px-1">
           <span class="text-emerald-400 font-bold text-sm block" id="countOpen">0</span>
@@ -92,26 +93,38 @@
       </div>
     </div>
 
-    <!-- Filtros de Categoría -->
+    <!-- Fila 1: Filtro de Categorías -->
     <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-xs">
-      <button onclick="setFilter('all')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-indigo-600 text-white" data-filter="all">Todos</button>
-      <button onclick="setFilter('favs')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-filter="favs">⭐ Favoritos</button>
-      <button onclick="setFilter('attractions')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-filter="attractions">🎢 Atracciones</button>
-      <button onclick="setFilter('shows')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-filter="shows">🎭 Shows</button>
-      <button onclick="setFilter('dining')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-filter="dining">🍴 Comida</button>
-      <button onclick="setFilter('open')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-filter="open">🟢 Abiertas</button>
-      <button onclick="setFilter('single')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-filter="single">⚡ Single</button>
+      <button onclick="setCatFilter('all')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-indigo-600 text-white" data-cat="all">Todos</button>
+      <button onclick="setCatFilter('favs')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="favs">⭐ Favoritos</button>
+      <button onclick="setCatFilter('attractions')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="attractions">🎢 Atracciones</button>
+      <button onclick="setCatFilter('shows')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="shows">🎭 Shows</button>
+      <button onclick="setCatFilter('characters')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="characters">📸 Personajes</button>
+      <button onclick="setCatFilter('dining')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="dining">🍔 Restaurantes</button>
+      <button onclick="setCatFilter('shops')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="shops">🛍️ Tiendas</button>
+    </div>
+
+    <!-- Fila 2: Filtro de Estados / Oportunidades -->
+    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-[11px]">
+      <button onclick="setStatusFilter('any')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-800 text-slate-200 border border-slate-700" data-stat="any">Cualquier estado</button>
+      <button onclick="setStatusFilter('open')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="open">🟢 Abiertas</button>
+      <button onclick="setStatusFilter('walkon')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="walkon">⚡ Sin cola (&lt;15m)</button>
+      <button onclick="setStatusFilter('down')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="down">🛠️ En pausa</button>
+      <button onclick="setStatusFilter('refurb')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="refurb">🚧 Mantenimiento</button>
+      <button onclick="setStatusFilter('closed')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="closed">⛔ Cerradas</button>
+      <button onclick="setStatusFilter('single')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="single">⚡ Single Rider</button>
     </div>
 
     <!-- Buscador y Ordenación -->
     <div class="flex gap-2">
       <div class="relative flex-1">
-        <input type="text" id="searchInput" oninput="renderLista()" placeholder="Buscar por nombre o zona..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs placeholder-slate-500 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <input type="text" id="searchInput" oninput="renderLista()" placeholder="Buscar por nombre, zona o tipo..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-7 py-2 text-xs placeholder-slate-500 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
         </svg>
+        <button onclick="document.getElementById('searchInput').value=''; renderLista()" class="absolute right-2.5 top-2 text-slate-500 hover:text-slate-300 text-xs">✕</button>
       </div>
-      <select id="sortSelect" onchange="renderLista()" class="bg-slate-900 border border-slate-800 rounded-xl px-2 py-2 text-xs text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <select id="sortSelect" onchange="renderLista()" class="bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <option value="waitDesc">Más espera</option>
         <option value="waitAsc">Menos espera</option>
         <option value="alpha">A - Z</option>
@@ -119,15 +132,15 @@
     </div>
 
     <!-- Indicador de Carga -->
-    <div id="loadingStatus" class="text-center py-8 text-xs text-slate-400">
-      <div class="inline-block animate-spin rounded-full h-5 w-5 border-2 border-indigo-500 border-t-transparent mb-2"></div>
-      <div>Obteniendo mapa y datos en vivo...</div>
+    <div id="loadingStatus" class="text-center py-10 text-xs text-slate-400">
+      <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-indigo-500 border-t-transparent mb-2"></div>
+      <div>Sincronizando zonas y atracciones...</div>
     </div>
 
-    <!-- Contenedor Principal de Tarjetas -->
-    <div id="cardsContainer" class="space-y-3"></div>
+    <!-- Contenedor Principal -->
+    <div id="cardsContainer" class="space-y-4"></div>
 
-    <!-- Pie de página con atribución obligatoria -->
+    <!-- Pie de página con atribución requerida -->
     <footer class="pt-6 pb-2 text-center text-xs text-slate-500 space-y-1">
       <p>
         <a href="https://themeparks.wiki" target="_blank" class="underline hover:text-slate-400">
@@ -139,28 +152,29 @@
 
   <script>
     let entidades = [];
-    let landMap = {}; // entityId -> Nombre de la Zona
-    let filtroActivo = 'all';
-    let viewMode = 'list'; // 'list' o 'zones'
+    let landMap = {}; // entityId -> Land Name
+    let catFiltro = 'all';
+    let statusFiltro = 'any';
+    let viewMode = 'zones'; // Activado por defecto en modo Zonas
     let autoRefreshTimer = null;
 
-    // Almacenamiento previo para detección de tendencias y reaperturas
+    // Historial para tendencias y reaperturas
     let prevStatus = {};
     let prevWaitTimes = {};
 
-    // Favoritos
+    // Favoritos en LocalStorage
     function getFavoritos() {
-      try { return JSON.parse(localStorage.getItem('tp_favs_v1') || '[]'); } catch { return []; }
+      try { return JSON.parse(localStorage.getItem('tp_favs_v2') || '[]'); } catch { return []; }
     }
     function toggleFavorito(id, event) {
       if (event) event.stopPropagation();
       let favs = getFavoritos();
       favs = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
-      localStorage.setItem('tp_favs_v1', JSON.stringify(favs));
+      localStorage.setItem('tp_favs_v2', JSON.stringify(favs));
       renderLista();
     }
 
-    // Checklist del día: "Ya me he montado"
+    // Checklist de montadas del día
     function getRiddenToday() {
       const hoy = new Date().toISOString().split('T')[0];
       try { return JSON.parse(localStorage.getItem(`tp_ridden_${hoy}`) || '[]'); } catch { return []; }
@@ -178,15 +192,58 @@
       document.getElementById('countRidden').textContent = getRiddenToday().length;
     }
 
-    // Alternar vista lista / agrupado por zonas
+    // Alternar modo de vista
     function toggleViewMode() {
-      viewMode = viewMode === 'list' ? 'zones' : 'list';
+      viewMode = viewMode === 'zones' ? 'list' : 'zones';
       document.getElementById('viewIcon').textContent = viewMode === 'zones' ? '📋' : '🗺️';
       document.getElementById('viewLabel').textContent = viewMode === 'zones' ? 'Lista' : 'Zonas';
       renderLista();
     }
 
-    // Carga de todos los endpoints en paralelo
+    // Clasificación Inteligente de Entidades
+    function getCategory(item) {
+      const name = item.name.toLowerCase();
+      const type = item.entityType;
+
+      // 1. Tiendas y Merchandise
+      if (type === 'MERCHANDISE' || type === 'RETAIL' || /tienda|shop|boutique|store|bazar|souvenir|regalos|bazaar/.test(name)) {
+        return 'shops';
+      }
+      // 2. Encuentros con personajes
+      if (/meet|encuentro|personaje|rencontre|greeting|photocall|princesa|mickey|donald|goofy|superman y batman|superhéroes|stitch|spider-man/.test(name)) {
+        return 'characters';
+      }
+      // 3. Espectáculos y Shows
+      if (type === 'SHOW' || (item.showtimes && item.showtimes.length > 0) || /show|espectáculo|parade|cabalgata|desfile|musical|stunt show|teatro|fuegos|fireworks|illumination/.test(name)) {
+        return 'shows';
+      }
+      // 4. Restauración
+      if (type === 'RESTAURANT' || type === 'DINING' || /restaurante|restaurant|café|cafe|grill|buffet|cantina|diner|burger|helados|ice cream|snack|pizzeria|tavern|taberna|bar/.test(name)) {
+        return 'dining';
+      }
+      // 5. Atracciones
+      return 'attractions';
+    }
+
+    // Icono específico según nombre de atracción
+    function getAttractionIcon(item, category) {
+      const n = item.name.toLowerCase();
+      if (category === 'shows') return '🎭';
+      if (category === 'characters') return '📸';
+      if (category === 'dining') return '🍔';
+      if (category === 'shops') return '🛍️';
+
+      // Atracciones mecánicas específicas
+      if (/coaster|montaña|stunt|express|batman|superman|hulk|space|flight|rock|shadows|inver|loop/.test(n)) return '🎢';
+      if (/water|rio|river|cataratas|rapidos|splash|flume|cascadas|barca/.test(n)) return '🌊';
+      if (/terror|hotel|haunted|fantasma|phantom|mansion|tomb|miedo|horror|inferno/.test(n)) return '👻';
+      if (/simulador|flight|3d|4d|cine|blaster|laser|star tours/.test(n)) return '🥽';
+      if (/carousel|carrusel|tiovivo|tazas|cups|dumbo|teacups|infantil|kids|sillas/.test(n)) return '🎠';
+      if (/torre|caida|drop|tower|vuelo|huracan/.test(n)) return '⚡';
+      return '🎡';
+    }
+
+    // Carga de todos los datos
     async function cargarTodo() {
       const parkId = document.getElementById('parkSelect').value;
       const loader = document.getElementById('loadingStatus');
@@ -203,24 +260,23 @@
           cargarLive(parkId)
         ]);
         const ahora = new Date();
-        document.getElementById('lastUpdateTxt').textContent = `Actualizado ${ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+        document.getElementById('lastUpdateTxt').textContent = `Actualizado ${ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
         actualizarContadorRidden();
       } catch (err) {
-        console.error('Error general:', err);
+        console.error('Error:', err);
       } finally {
         loader.classList.add('hidden');
       }
     }
 
-    // 1. Obtener árbol de Zonas (/children)
+    // Endpoint /children (Zonas)
     async function cargarZonas(parkId) {
       try {
         const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/children`);
         if (!res.ok) return;
         const data = await res.json();
         landMap = parseLands(data);
-      } catch (e) {
-        console.warn('No se pudieron obtener las zonas:', e);
+      } catch {
         landMap = {};
       }
     }
@@ -230,7 +286,6 @@
       const landsById = {};
       const items = Array.isArray(data) ? data : (data.children || []);
 
-      // Paso 1: localizar entidades de tipo LAND
       function buscarLands(nodes) {
         if (!nodes) return;
         nodes.forEach(n => {
@@ -240,19 +295,13 @@
       }
       buscarLands(items);
 
-      // Paso 2: asociar atracción con su zona
       function asignar(nodes, currentLand) {
         if (!nodes) return;
         nodes.forEach(n => {
           let activeLand = currentLand;
-          if (n.entityType === 'LAND') {
-            activeLand = n.name;
-          } else if (n.parentId && landsById[n.parentId]) {
-            activeLand = landsById[n.parentId];
-          }
-          if (n.id && activeLand && n.entityType !== 'LAND') {
-            mapping[n.id] = activeLand;
-          }
+          if (n.entityType === 'LAND') activeLand = n.name;
+          else if (n.parentId && landsById[n.parentId]) activeLand = landsById[n.parentId];
+          if (n.id && activeLand && n.entityType !== 'LAND') mapping[n.id] = activeLand;
           if (n.children) asignar(n.children, activeLand);
         });
       }
@@ -260,7 +309,7 @@
       return mapping;
     }
 
-    // 2. Horarios del día (/schedule)
+    // Endpoint /schedule (Horario hoy)
     async function cargarHorarios(parkId) {
       const scheduleTxt = document.getElementById('scheduleText');
       try {
@@ -283,7 +332,7 @@
       }
     }
 
-    // 3. Tiempos en vivo (/live) + Detección de reaperturas y tendencias
+    // Endpoint /live (Tiempos en vivo)
     async function cargarLive(parkId) {
       const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/live`);
       if (!res.ok) throw new Error();
@@ -303,18 +352,15 @@
         else if (estado === 'DOWN') pausa++;
         else cerradas++;
 
-        // Detectar si pasa de averiada a abierta
+        // Detección de reaperturas
         if (prevStatus[item.id] === 'DOWN' && estado === 'OPERATING') {
           reabiertas.push(item.name);
         }
 
         newStatus[item.id] = estado;
-        if (tiempo !== undefined && tiempo !== null) {
-          newWaits[item.id] = tiempo;
-        }
+        if (tiempo != null) newWaits[item.id] = tiempo;
       });
 
-      // Mostrar banner si hay reaperturas
       if (reabiertas.length > 0) {
         const banner = document.getElementById('reopeningBanner');
         document.getElementById('reopeningText').textContent = `¡Acaba de reabrir: ${reabiertas.join(', ')}!`;
@@ -326,26 +372,33 @@
       document.getElementById('countDown').textContent = pausa;
       document.getElementById('countClosed').textContent = cerradas;
 
-      // Actualizar referencias históricas para la siguiente lectura
       prevStatus = newStatus;
       prevWaitTimes = newWaits;
-
       renderLista();
     }
 
-    function setFilter(filtro) {
-      filtroActivo = filtro;
-      document.querySelectorAll('.filter-chip').forEach(btn => {
-        if (btn.dataset.filter === filtro) {
-          btn.className = 'filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-indigo-600 text-white';
-        } else {
-          btn.className = 'filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800';
-        }
+    // Manejadores de Filtros
+    function setCatFilter(cat) {
+      catFiltro = cat;
+      document.querySelectorAll('.cat-chip').forEach(btn => {
+        btn.className = btn.dataset.cat === cat
+          ? 'cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-indigo-600 text-white'
+          : 'cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800';
       });
       renderLista();
     }
 
-    // Renderizado general
+    function setStatusFilter(stat) {
+      statusFiltro = stat;
+      document.querySelectorAll('.status-chip').forEach(btn => {
+        btn.className = btn.dataset.stat === stat
+          ? 'status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-800 text-slate-100 border border-slate-600'
+          : 'status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800';
+      });
+      renderLista();
+    }
+
+    // Render de la lista
     function renderLista() {
       const container = document.getElementById('cardsContainer');
       const query = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -356,28 +409,33 @@
       container.innerHTML = '';
 
       let filtradas = entidades.filter(item => {
-        const landName = landMap[item.id] || '';
-        const matchesQuery = item.name.toLowerCase().includes(query) || landName.toLowerCase().includes(query);
+        const landName = (landMap[item.id] || '').toLowerCase();
+        const matchesQuery = item.name.toLowerCase().includes(query) || landName.includes(query);
         if (!matchesQuery) return false;
 
+        const cat = getCategory(item);
         const isFav = favs.includes(item.id);
-        const isShow = item.entityType === 'SHOW' || (item.showtimes && item.showtimes.length > 0);
-        const isDining = item.entityType === 'RESTAURANT';
-        const isOpen = item.status === 'OPERATING';
-        const hasSingle = item.queue?.SINGLE_RIDER?.waitTime != null;
+        const status = item.status || 'CLOSED';
+        const wait = item.queue?.STANDBY?.waitTime;
 
-        if (filtroActivo === 'favs') return isFav;
-        if (filtroActivo === 'shows') return isShow;
-        if (filtroActivo === 'dining') return isDining;
-        if (filtroActivo === 'attractions') return !isShow && !isDining;
-        if (filtroActivo === 'open') return isOpen;
-        if (filtroActivo === 'single') return hasSingle;
+        // Filtro Categoría
+        if (catFiltro === 'favs' && !isFav) return false;
+        if (catFiltro !== 'all' && catFiltro !== 'favs' && cat !== catFiltro) return false;
+
+        // Filtro Estado
+        if (statusFiltro === 'open' && status !== 'OPERATING') return false;
+        if (statusFiltro === 'walkon' && (status !== 'OPERATING' || wait == null || wait >= 15)) return false;
+        if (statusFiltro === 'down' && status !== 'DOWN') return false;
+        if (statusFiltro === 'refurb' && status !== 'REFURBISHMENT') return false;
+        if (statusFiltro === 'closed' && status !== 'CLOSED') return false;
+        if (statusFiltro === 'single' && item.queue?.SINGLE_RIDER?.waitTime == null) return false;
+
         return true;
       });
 
       // Ordenación
       filtradas.sort((a, b) => {
-        if (filtroActivo === 'all') {
+        if (catFiltro === 'all') {
           const favA = favs.includes(a.id) ? 1 : 0;
           const favB = favs.includes(b.id) ? 1 : 0;
           if (favA !== favB) return favB - favA;
@@ -392,70 +450,68 @@
       });
 
       if (filtradas.length === 0) {
-        container.innerHTML = '<div class="text-center py-8 text-xs text-slate-500">No se encontraron elementos con este filtro.</div>';
+        container.innerHTML = '<div class="text-center py-10 text-xs text-slate-500">No se encontraron elementos con los filtros seleccionados.</div>';
         return;
       }
 
-      // VISTA POR ZONAS / LANDS
+      // VISTA POR ZONAS (LANDS)
       if (viewMode === 'zones') {
-        const grupos = {};
+        const zonas = {};
         filtradas.forEach(item => {
-          const zona = landMap[item.id] || 'Otras áreas / General';
-          if (!grupos[zona]) grupos[zona] = [];
-          grupos[zona].push(item);
+          const zona = landMap[item.id] || 'General / Otras áreas';
+          if (!zonas[zona]) zonas[zona] = [];
+          zonas[zona].push(item);
         });
 
-        Object.keys(grupos).sort().forEach(zona => {
-          const section = document.createElement('div');
-          section.className = 'space-y-2';
+        Object.keys(zonas).sort().forEach(zona => {
+          const sec = document.createElement('div');
+          sec.className = 'space-y-2';
 
           const header = document.createElement('div');
-          header.className = 'flex items-center justify-between pt-2 pb-1 text-xs font-semibold text-indigo-300 border-b border-slate-800';
+          header.className = 'flex items-center justify-between pt-2 pb-1 border-b border-slate-800 text-xs font-semibold text-indigo-300';
           header.innerHTML = `
             <span class="flex items-center gap-1.5">📍 ${zona}</span>
-            <span class="text-[10px] text-slate-500 font-normal">${grupos[zona].length} elementos</span>
+            <span class="text-[10px] text-slate-500 font-normal">${zonas[zona].length}</span>
           `;
-          section.appendChild(header);
+          sec.appendChild(header);
 
-          grupos[zona].forEach(item => {
-            section.appendChild(crearCardElemento(item, favs, ridden));
+          zonas[zona].forEach(item => {
+            sec.appendChild(crearCard(item, favs, ridden));
           });
-
-          container.appendChild(section);
+          container.appendChild(sec);
         });
       } else {
         // VISTA LISTA PLANA
         filtradas.forEach(item => {
-          container.appendChild(crearCardElemento(item, favs, ridden));
+          container.appendChild(crearCard(item, favs, ridden));
         });
       }
     }
 
-    // Creación de cada tarjeta
-    function crearCardElemento(item, favs, ridden) {
+    // Creación de cada tarjeta de elemento
+    function crearCard(item, favs, ridden) {
+      const cat = getCategory(item);
+      const icon = getAttractionIcon(item, cat);
       const isFav = favs.includes(item.id);
       const isRidden = ridden.includes(item.id);
-      const isShow = item.entityType === 'SHOW' || (item.showtimes && item.showtimes.length > 0);
-      const isDining = item.entityType === 'RESTAURANT';
       const status = item.status || 'CLOSED';
       const wait = item.queue?.STANDBY?.waitTime;
       const singleWait = item.queue?.SINGLE_RIDER?.waitTime;
       const paidReturn = item.queue?.PAID_RETURN_TIME;
-      const boarding = item.queue?.BOARDING_GROUP;
-      const landName = landMap[item.id];
+      const land = landMap[item.id];
 
-      // Tendencia de espera (↑ o ↓)
+      // Tendencia de espera (↑ / ↓)
       let trendHtml = '';
-      if (prevWaitTimes[item.id] !== undefined && wait !== undefined && wait !== null) {
+      if (prevWaitTimes[item.id] != null && wait != null) {
         const diff = wait - prevWaitTimes[item.id];
         if (diff > 0) trendHtml = `<span class="text-[10px] text-rose-400 font-bold block">↑ +${diff}m</span>`;
         else if (diff < 0) trendHtml = `<span class="text-[10px] text-emerald-400 font-bold block">↓ ${diff}m</span>`;
       }
 
-      // Badge de estado
+      // Badge de estado y tiempo de espera
       let badgeHtml = '';
       if (status === 'OPERATING') {
-        if (wait !== undefined && wait !== null) {
+        if (wait != null) {
           const colorClass = wait > 45 ? 'bg-rose-500/15 text-rose-300 border-rose-500/30' :
                              wait > 20 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' :
                              'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
@@ -475,7 +531,7 @@
         badgeHtml = `<span class="text-xs px-2 py-0.5 rounded-lg bg-slate-900 text-slate-500 border border-slate-800">Cerrado</span>`;
       }
 
-      // Filas adicionales: Single Rider, Disney Premier Access, Grupos
+      // Píldoras de información adicional (Single Rider, Pases de pago, Pases de Show)
       const pills = [];
       if (singleWait != null) {
         pills.push(`<span class="inline-flex items-center text-[10px] bg-indigo-950/60 text-indigo-300 border border-indigo-800/40 px-2 py-0.5 rounded-md">⚡ Single: <b>${singleWait}m</b></span>`);
@@ -486,40 +542,51 @@
         const precio = paidReturn.price?.formatted ? ` • ${paidReturn.price.formatted}` : '';
         pills.push(`<span class="inline-flex items-center text-[10px] bg-purple-950/60 text-purple-300 border border-purple-800/40 px-2 py-0.5 rounded-md">🎟️ Pase: ${horaIni}-${horaFin}${precio}</span>`);
       }
-      if (boarding && boarding.currentGroupStart) {
-        pills.push(`<span class="inline-flex items-center text-[10px] bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 px-2 py-0.5 rounded-md">👥 Grupos: ${boarding.currentGroupStart}–${boarding.currentGroupEnd || ''}</span>`);
-      }
+
+      // Cuenta atrás para espectáculos
       if (item.showtimes && item.showtimes.length > 0) {
-        const proximos = item.showtimes.slice(0, 3).map(st => formatHora(st.startTime)).join(', ');
-        pills.push(`<span class="text-[10px] text-amber-300/90 bg-amber-950/40 border border-amber-900/40 px-2 py-0.5 rounded-md">🎭 Pases: ${proximos}</span>`);
+        const prox = calcularProximoShow(item.showtimes);
+        if (prox) {
+          pills.push(`<span class="text-[10px] text-amber-300 bg-amber-950/50 border border-amber-900/50 px-2 py-0.5 rounded-md font-medium">🎭 Próximo: ${prox.hora} (${prox.countdown})</span>`);
+        } else {
+          const listHoras = item.showtimes.slice(0, 3).map(st => formatHora(st.startTime)).join(', ');
+          pills.push(`<span class="text-[10px] text-amber-300/80 bg-amber-950/30 border border-amber-900/30 px-2 py-0.5 rounded-md">Pases: ${listHoras}</span>`);
+        }
       }
 
       const extraInfoHtml = pills.length > 0 ? `<div class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-slate-800/60">${pills.join('')}</div>` : '';
 
-      const card = document.createElement('div');
-      card.className = `bg-slate-900/80 border ${isFav ? 'border-amber-500/40 bg-amber-950/10' : 'border-slate-800/70'} p-3 rounded-2xl shadow-sm transition ${isRidden ? 'opacity-50' : ''}`;
-      
-      const tipoEtiqueta = isShow ? 'Espectáculo' : isDining ? 'Restaurante' : 'Atracción';
+      const labelsCat = {
+        attractions: 'Atracción',
+        shows: 'Espectáculo',
+        characters: 'Personaje',
+        dining: 'Restauración',
+        shops: 'Tienda'
+      };
 
+      const card = document.createElement('div');
+      card.className = `bg-slate-900/80 border ${isFav ? 'border-amber-500/40 bg-amber-950/10' : 'border-slate-800/70'} p-3 rounded-2xl shadow-sm transition ${isRidden ? 'opacity-40' : ''}`;
+      
       card.innerHTML = `
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-start gap-2.5 min-w-0">
-            <!-- Botón Favorito -->
             <button onclick="toggleFavorito('${item.id}', event)" class="text-base mt-0.5 active:scale-125 focus:outline-none" title="Favorito">
               ${isFav ? '⭐' : '☆'}
             </button>
             <div class="min-w-0">
-              <h3 class="font-medium text-sm text-slate-100 leading-snug line-clamp-2 ${isRidden ? 'line-through text-slate-400' : ''}">${item.name}</h3>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs">${icon}</span>
+                <h3 class="font-medium text-sm text-slate-100 leading-snug line-clamp-2 ${isRidden ? 'line-through text-slate-400' : ''}">${item.name}</h3>
+              </div>
               <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="text-[10px] text-slate-500 uppercase tracking-wider">${tipoEtiqueta}</span>
-                ${landName ? `<span class="text-[10px] text-indigo-400/80 truncate">• ${landName}</span>` : ''}
+                <span class="text-[10px] text-slate-500 uppercase tracking-wider">${labelsCat[cat]}</span>
+                ${land ? `<span class="text-[10px] text-indigo-400/80 truncate">• ${land}</span>` : ''}
               </div>
             </div>
           </div>
           <div class="flex items-center gap-2">
             ${badgeHtml}
-            <!-- Botón Check Hecho -->
-            ${!isShow && !isDining ? `
+            ${cat === 'attractions' ? `
               <button onclick="toggleRidden('${item.id}', event)" class="text-xs p-1 rounded-lg border ${isRidden ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-400' : 'border-slate-800 text-slate-600 hover:text-slate-400'}" title="Marcar como montada">
                 ✓
               </button>
@@ -541,6 +608,19 @@
       }
     }
 
+    function calcularProximoShow(showtimes) {
+      const ahora = new Date().getTime();
+      for (const st of showtimes) {
+        const t = new Date(st.startTime).getTime();
+        const diffMin = Math.round((t - ahora) / 60000);
+        if (diffMin > -5 && diffMin <= 180) {
+          const countdown = diffMin <= 0 ? '¡Empezando!' : `en ${diffMin} min`;
+          return { hora: formatHora(st.startTime), countdown };
+        }
+      }
+      return null;
+    }
+
     // Auto-refresco
     function toggleAutoRefresh() {
       const isChecked = document.getElementById('autoRefreshCheck').checked;
@@ -553,7 +633,7 @@
       }
     }
 
-    // Arranque inicial
+    // Inicio
     cargarTodo();
   </script>
 </body>
