@@ -5,13 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Tiempos, Zonas & Mapa en Vivo</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Estilos y scripts de Leaflet para el mapa -->
+  <!-- Estilos y scripts de Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    /* Adaptación oscura para popups de Leaflet */
+
+    /* Filtro para transformar OpenStreetMap en modo oscuro sin requerir API key */
+    .leaflet-tile {
+      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+    }
+
+    /* Adaptación oscura de popups de Leaflet */
     .leaflet-popup-content-wrapper {
       background: #0f172a !important;
       color: #f1f5f9 !important;
@@ -164,7 +170,7 @@
     <div id="mapWrapper" class="hidden relative">
       <div id="map" class="w-full h-[65vh] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl z-10"></div>
       
-      <!-- Botón flotante para localizar usuario por GPS -->
+      <!-- Botón flotante para GPS -->
       <button onclick="localizarUsuario()" class="absolute bottom-4 right-4 z-20 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white p-3 rounded-2xl shadow-xl flex items-center justify-center border border-indigo-400/30" title="Centrar en mi ubicación">
         📍 <span class="ml-1 text-xs font-semibold">Mi posición</span>
       </button>
@@ -182,11 +188,11 @@
 
   <script>
     let entidades = [];
-    let landMap = {};       // entityId -> Land Name
-    let coordsMap = {};     // entityId -> { lat, lng }
+    let landMap = {};
+    let coordsMap = {};
     let catFiltro = 'all';
     let statusFiltro = 'any';
-    let viewMode = 'zones'; // 'list', 'zones', 'map'
+    let viewMode = 'zones';
     let autoRefreshTimer = null;
 
     // Coordenadas centrales por defecto para cada parque
@@ -233,7 +239,7 @@
       document.getElementById('countRidden').textContent = getRiddenToday().length;
     }
 
-    // Inicializar mapa de Leaflet
+    // Inicializar mapa de Leaflet con OpenStreetMap
     function initMap() {
       if (map) return;
       const parkId = document.getElementById('parkSelect').value;
@@ -244,19 +250,15 @@
         attributionControl: false
       }).setView([initial.lat, initial.lng], initial.zoom);
 
-      // Capa de mapa (CartoDB Dark Matter para coincidir con la estética oscura)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd'
+      // OpenStreetMap gratuito sin API Key
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
       }).addTo(map);
 
-      // Añadir controles de zoom abajo a la izquierda para no tapar la cabecera
       L.control.zoom({ position: 'bottomleft' }).addTo(map);
-
       markersLayer = L.layerGroup().addTo(map);
     }
 
-    // Cambio de modo de visualización (Lista, Zonas, Mapa)
     function setViewMode(mode) {
       viewMode = mode;
       const btnList = document.getElementById('btnViewList');
@@ -291,7 +293,6 @@
       }
     }
 
-    // Ir a la ubicación de una atracción concreta directamente en el mapa
     function irAlMapa(itemId) {
       const coords = coordsMap[itemId];
       if (!coords) {
@@ -301,7 +302,6 @@
       setViewMode('map');
       setTimeout(() => {
         map.flyTo([coords.lat, coords.lng], 18, { animate: true, duration: 1 });
-        // Abrir popup de este marcador si existe
         if (markersLayer) {
           markersLayer.eachLayer(layer => {
             if (layer._itemId === itemId) layer.openPopup();
@@ -310,7 +310,6 @@
       }, 200);
     }
 
-    // Localizar posición del usuario dentro del parque
     function localizarUsuario() {
       if (!navigator.geolocation) {
         alert('Tu navegador no soporta geolocalización.');
@@ -333,7 +332,7 @@
 
         userMarker = L.marker([lat, lng], { icon: userIcon }).addTo(map);
         map.flyTo([lat, lng], 17, { animate: true });
-      }, err => {
+      }, () => {
         alert('No se pudo obtener tu ubicación. Asegúrate de dar permisos de GPS.');
       });
     }
@@ -347,7 +346,6 @@
       cargarTodo();
     }
 
-    // Clasificación de elementos
     function getCategory(item) {
       const name = item.name.toLowerCase();
       const type = item.entityType;
@@ -375,7 +373,6 @@
       return '🎡';
     }
 
-    // Cargar endpoints en paralelo
     async function cargarTodo() {
       const parkId = document.getElementById('parkSelect').value;
       const loader = document.getElementById('loadingStatus');
@@ -391,7 +388,7 @@
           cargarLive(parkId)
         ]);
         const ahora = new Date();
-        document.getElementById('lastUpdateTxt').textContent = `Actualizado ${ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+        document.getElementById('lastUpdateTxt').textContent = `Actualizado ${ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
         actualizarContadorRidden();
       } catch (err) {
         console.error('Error:', err);
@@ -400,7 +397,6 @@
       }
     }
 
-    // Extraer tanto Zonas como Coordenadas desde /children
     async function cargarZonasYCoords(parkId) {
       try {
         const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/children`);
@@ -450,7 +446,6 @@
       asignar(items, null);
     }
 
-    // Horarios hoy (/schedule)
     async function cargarHorarios(parkId) {
       const scheduleTxt = document.getElementById('scheduleText');
       try {
@@ -473,7 +468,6 @@
       }
     }
 
-    // Tiempos en vivo (/live)
     async function cargarLive(parkId) {
       const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/live`);
       if (!res.ok) throw new Error();
@@ -493,7 +487,6 @@
         else if (estado === 'DOWN') pausa++;
         else cerradas++;
 
-        // Guardar coordenadas si vienen directamente en /live
         if (item.location && item.location.latitude && item.location.longitude) {
           coordsMap[item.id] = { lat: item.location.latitude, lng: item.location.longitude };
         }
@@ -550,7 +543,6 @@
       }
     }
 
-    // Filtrar elementos según búsqueda y botones
     function getElementosFiltrados() {
       const query = document.getElementById('searchInput').value.trim().toLowerCase();
       const favs = getFavoritos();
@@ -579,7 +571,6 @@
       });
     }
 
-    // RENDERIZADO DEL MAPA
     function renderMapa() {
       if (!map || !markersLayer) return;
       markersLayer.clearLayers();
@@ -632,7 +623,6 @@
         const marker = L.marker([coords.lat, coords.lng], { icon: customIcon });
         marker._itemId = item.id;
 
-        // Popup interactivo al pulsar el pin
         const land = landMap[item.id];
         const popupContent = `
           <div class="text-xs p-1 min-w-[170px] space-y-1.5">
@@ -656,7 +646,6 @@
       });
     }
 
-    // RENDERIZADO DE LA LISTA
     function renderLista() {
       const container = document.getElementById('cardsContainer');
       const sortType = document.getElementById('sortSelect').value;
@@ -718,7 +707,6 @@
       }
     }
 
-    // Creación de cada tarjeta
     function crearCard(item, favs, ridden) {
       const cat = getCategory(item);
       const icon = getAttractionIcon(item, cat);
@@ -864,7 +852,7 @@
       }
     }
 
-    // Inicio
+    // Inicio automático
     cargarTodo();
   </script>
 </body>
