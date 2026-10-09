@@ -3,11 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tiempos, Zonas & Espectáculos</title>
+  <title>Tiempos, Zonas & Mapa en Vivo</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Estilos y scripts de Leaflet para el mapa -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* Adaptación oscura para popups de Leaflet */
+    .leaflet-popup-content-wrapper {
+      background: #0f172a !important;
+      color: #f1f5f9 !important;
+      border: 1px solid #334155 !important;
+      border-radius: 1rem !important;
+      padding: 0.25rem !important;
+    }
+    .leaflet-popup-tip {
+      background: #0f172a !important;
+      border: 1px solid #334155 !important;
+    }
+    .leaflet-popup-close-button {
+      color: #94a3b8 !important;
+      padding: 6px !important;
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen pb-16 antialiased selection:bg-indigo-500 selection:text-white">
@@ -27,16 +46,17 @@
       <div class="flex items-center gap-2">
         <span class="text-xl">🎢</span>
         <div>
-          <h1 class="text-sm font-bold tracking-tight">WaitTimes Pro</h1>
+          <h1 class="text-sm font-bold tracking-tight">WaitTimes Map</h1>
           <p id="lastUpdateTxt" class="text-[10px] text-slate-400">Iniciando...</p>
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <!-- Alternar vista Zonas vs Lista -->
-        <button id="viewToggleBtn" onclick="toggleViewMode()" class="text-xs bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 px-2.5 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-          <span id="viewIcon">📋</span>
-          <span id="viewLabel">Lista</span>
-        </button>
+        <!-- Selector de Vista: Lista / Zonas / Mapa -->
+        <div class="flex bg-slate-800 p-0.5 rounded-xl border border-slate-700 text-xs">
+          <button id="btnViewList" onclick="setViewMode('list')" class="px-2 py-1 rounded-lg font-medium transition text-slate-400" title="Vista Lista">📋</button>
+          <button id="btnViewZones" onclick="setViewMode('zones')" class="px-2 py-1 rounded-lg font-medium transition bg-indigo-600 text-white shadow" title="Vista Zonas">🗺️</button>
+          <button id="btnViewMap" onclick="setViewMode('map')" class="px-2 py-1 rounded-lg font-medium transition text-slate-400" title="Vista Mapa">📍</button>
+        </div>
         <!-- Botón refrescar -->
         <button id="refreshBtn" onclick="cargarTodo()" class="text-xs bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium p-2 rounded-xl transition shadow">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +71,7 @@
 
     <!-- Selector de Parque -->
     <div>
-      <select id="parkSelect" onchange="cargarTodo()" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner">
+      <select id="parkSelect" onchange="cambiarDeParque()" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner">
         <option value="5adbd2f7-3694-4d23-aaec-4037a056573f">Parque Warner Madrid</option>
         <option value="1ea86991-e2c2-4771-8a32-c6e14c8298a9">Parque de Atracciones de Madrid</option>
         <option value="dae968d5-630d-4719-8b06-3d107e944401">Disneyland Park (París)</option>
@@ -106,7 +126,7 @@
 
     <!-- Fila 2: Filtro de Estados / Oportunidades -->
     <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-[11px]">
-      <button onclick="setStatusFilter('any')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-800 text-slate-200 border border-slate-700" data-stat="any">Cualquier estado</button>
+      <button onclick="setStatusFilter('any')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-800 text-slate-100 border border-slate-600" data-stat="any">Cualquier estado</button>
       <button onclick="setStatusFilter('open')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="open">🟢 Abiertas</button>
       <button onclick="setStatusFilter('walkon')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="walkon">⚡ Sin cola (&lt;15m)</button>
       <button onclick="setStatusFilter('down')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="down">🛠️ En pausa</button>
@@ -118,11 +138,11 @@
     <!-- Buscador y Ordenación -->
     <div class="flex gap-2">
       <div class="relative flex-1">
-        <input type="text" id="searchInput" oninput="renderLista()" placeholder="Buscar por nombre, zona o tipo..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-7 py-2 text-xs placeholder-slate-500 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <input type="text" id="searchInput" oninput="actualizarVistas()" placeholder="Buscar por nombre o zona..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-7 py-2 text-xs placeholder-slate-500 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
         </svg>
-        <button onclick="document.getElementById('searchInput').value=''; renderLista()" class="absolute right-2.5 top-2 text-slate-500 hover:text-slate-300 text-xs">✕</button>
+        <button onclick="document.getElementById('searchInput').value=''; actualizarVistas()" class="absolute right-2.5 top-2 text-slate-500 hover:text-slate-300 text-xs">✕</button>
       </div>
       <select id="sortSelect" onchange="renderLista()" class="bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <option value="waitDesc">Más espera</option>
@@ -134,13 +154,23 @@
     <!-- Indicador de Carga -->
     <div id="loadingStatus" class="text-center py-10 text-xs text-slate-400">
       <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-indigo-500 border-t-transparent mb-2"></div>
-      <div>Sincronizando zonas y atracciones...</div>
+      <div>Sincronizando zonas, coordenadas y atracciones...</div>
     </div>
 
-    <!-- Contenedor Principal -->
+    <!-- CONTENEDOR 1: Vista de Lista y Zonas -->
     <div id="cardsContainer" class="space-y-4"></div>
 
-    <!-- Pie de página con atribución requerida -->
+    <!-- CONTENEDOR 2: Vista de Mapa Interactivo -->
+    <div id="mapWrapper" class="hidden relative">
+      <div id="map" class="w-full h-[65vh] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl z-10"></div>
+      
+      <!-- Botón flotante para localizar usuario por GPS -->
+      <button onclick="localizarUsuario()" class="absolute bottom-4 right-4 z-20 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white p-3 rounded-2xl shadow-xl flex items-center justify-center border border-indigo-400/30" title="Centrar en mi ubicación">
+        📍 <span class="ml-1 text-xs font-semibold">Mi posición</span>
+      </button>
+    </div>
+
+    <!-- Pie de página con atribución -->
     <footer class="pt-6 pb-2 text-center text-xs text-slate-500 space-y-1">
       <p>
         <a href="https://themeparks.wiki" target="_blank" class="underline hover:text-slate-400">
@@ -152,17 +182,29 @@
 
   <script>
     let entidades = [];
-    let landMap = {}; // entityId -> Land Name
+    let landMap = {};       // entityId -> Land Name
+    let coordsMap = {};     // entityId -> { lat, lng }
     let catFiltro = 'all';
     let statusFiltro = 'any';
-    let viewMode = 'zones'; // Activado por defecto en modo Zonas
+    let viewMode = 'zones'; // 'list', 'zones', 'map'
     let autoRefreshTimer = null;
+
+    // Coordenadas centrales por defecto para cada parque
+    const PARK_CENTERS = {
+      '5adbd2f7-3694-4d23-aaec-4037a056573f': { lat: 40.2295, lng: -3.5938, zoom: 16 }, // Parque Warner
+      '1ea86991-e2c2-4771-8a32-c6e14c8298a9': { lat: 40.4124, lng: -3.7505, zoom: 16 }, // Parque Atracciones Madrid
+      'dae968d5-630d-4719-8b06-3d107e944401': { lat: 48.8722, lng: 2.7758, zoom: 16 },  // Disneyland Park Paris
+      'ca888437-ebb4-4d50-aed2-d227f7096968': { lat: 48.8683, lng: 2.7806, zoom: 16 }   // Disney Adventure World
+    };
+
+    let map = null;
+    let markersLayer = null;
+    let userMarker = null;
 
     // Historial para tendencias y reaperturas
     let prevStatus = {};
     let prevWaitTimes = {};
 
-    // Favoritos en LocalStorage
     function getFavoritos() {
       try { return JSON.parse(localStorage.getItem('tp_favs_v2') || '[]'); } catch { return []; }
     }
@@ -171,10 +213,9 @@
       let favs = getFavoritos();
       favs = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
       localStorage.setItem('tp_favs_v2', JSON.stringify(favs));
-      renderLista();
+      actualizarVistas();
     }
 
-    // Checklist de montadas del día
     function getRiddenToday() {
       const hoy = new Date().toISOString().split('T')[0];
       try { return JSON.parse(localStorage.getItem(`tp_ridden_${hoy}`) || '[]'); } catch { return []; }
@@ -186,46 +227,138 @@
       ridden = ridden.includes(id) ? ridden.filter(r => r !== id) : [...ridden, id];
       localStorage.setItem(`tp_ridden_${hoy}`, JSON.stringify(ridden));
       actualizarContadorRidden();
-      renderLista();
+      actualizarVistas();
     }
     function actualizarContadorRidden() {
       document.getElementById('countRidden').textContent = getRiddenToday().length;
     }
 
-    // Alternar modo de vista
-    function toggleViewMode() {
-      viewMode = viewMode === 'zones' ? 'list' : 'zones';
-      document.getElementById('viewIcon').textContent = viewMode === 'zones' ? '📋' : '🗺️';
-      document.getElementById('viewLabel').textContent = viewMode === 'zones' ? 'Lista' : 'Zonas';
-      renderLista();
+    // Inicializar mapa de Leaflet
+    function initMap() {
+      if (map) return;
+      const parkId = document.getElementById('parkSelect').value;
+      const initial = PARK_CENTERS[parkId] || { lat: 40.2295, lng: -3.5938, zoom: 16 };
+
+      map = L.map('map', {
+        zoomControl: false,
+        attributionControl: false
+      }).setView([initial.lat, initial.lng], initial.zoom);
+
+      // Capa de mapa (CartoDB Dark Matter para coincidir con la estética oscura)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        subdomains: 'abcd'
+      }).addTo(map);
+
+      // Añadir controles de zoom abajo a la izquierda para no tapar la cabecera
+      L.control.zoom({ position: 'bottomleft' }).addTo(map);
+
+      markersLayer = L.layerGroup().addTo(map);
     }
 
-    // Clasificación Inteligente de Entidades
+    // Cambio de modo de visualización (Lista, Zonas, Mapa)
+    function setViewMode(mode) {
+      viewMode = mode;
+      const btnList = document.getElementById('btnViewList');
+      const btnZones = document.getElementById('btnViewZones');
+      const btnMap = document.getElementById('btnViewMap');
+      const cardsContainer = document.getElementById('cardsContainer');
+      const mapWrapper = document.getElementById('mapWrapper');
+
+      [btnList, btnZones, btnMap].forEach(b => {
+        b.className = 'px-2 py-1 rounded-lg font-medium transition text-slate-400';
+      });
+
+      if (mode === 'list') {
+        btnList.className = 'px-2 py-1 rounded-lg font-medium transition bg-indigo-600 text-white shadow';
+        cardsContainer.classList.remove('hidden');
+        mapWrapper.classList.add('hidden');
+        renderLista();
+      } else if (mode === 'zones') {
+        btnZones.className = 'px-2 py-1 rounded-lg font-medium transition bg-indigo-600 text-white shadow';
+        cardsContainer.classList.remove('hidden');
+        mapWrapper.classList.add('hidden');
+        renderLista();
+      } else if (mode === 'map') {
+        btnMap.className = 'px-2 py-1 rounded-lg font-medium transition bg-indigo-600 text-white shadow';
+        cardsContainer.classList.add('hidden');
+        mapWrapper.classList.remove('hidden');
+        initMap();
+        setTimeout(() => {
+          map.invalidateSize();
+          renderMapa();
+        }, 150);
+      }
+    }
+
+    // Ir a la ubicación de una atracción concreta directamente en el mapa
+    function irAlMapa(itemId) {
+      const coords = coordsMap[itemId];
+      if (!coords) {
+        alert('Este elemento no tiene coordenadas registradas en el mapa.');
+        return;
+      }
+      setViewMode('map');
+      setTimeout(() => {
+        map.flyTo([coords.lat, coords.lng], 18, { animate: true, duration: 1 });
+        // Abrir popup de este marcador si existe
+        if (markersLayer) {
+          markersLayer.eachLayer(layer => {
+            if (layer._itemId === itemId) layer.openPopup();
+          });
+        }
+      }, 200);
+    }
+
+    // Localizar posición del usuario dentro del parque
+    function localizarUsuario() {
+      if (!navigator.geolocation) {
+        alert('Tu navegador no soporta geolocalización.');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        if (!map) return;
+
+        if (userMarker) map.removeLayer(userMarker);
+
+        const userIcon = L.divIcon({
+          className: 'custom-user-marker',
+          html: `<div class="w-4 h-4 bg-blue-500 border-2 border-white rounded-full shadow-lg animate-ping"></div>
+                 <div class="w-4 h-4 bg-blue-500 border-2 border-white rounded-full shadow-lg -mt-4"></div>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        });
+
+        userMarker = L.marker([lat, lng], { icon: userIcon }).addTo(map);
+        map.flyTo([lat, lng], 17, { animate: true });
+      }, err => {
+        alert('No se pudo obtener tu ubicación. Asegúrate de dar permisos de GPS.');
+      });
+    }
+
+    function cambiarDeParque() {
+      const parkId = document.getElementById('parkSelect').value;
+      if (map && PARK_CENTERS[parkId]) {
+        const c = PARK_CENTERS[parkId];
+        map.setView([c.lat, c.lng], c.zoom);
+      }
+      cargarTodo();
+    }
+
+    // Clasificación de elementos
     function getCategory(item) {
       const name = item.name.toLowerCase();
       const type = item.entityType;
 
-      // 1. Tiendas y Merchandise
-      if (type === 'MERCHANDISE' || type === 'RETAIL' || /tienda|shop|boutique|store|bazar|souvenir|regalos|bazaar/.test(name)) {
-        return 'shops';
-      }
-      // 2. Encuentros con personajes
-      if (/meet|encuentro|personaje|rencontre|greeting|photocall|princesa|mickey|donald|goofy|superman y batman|superhéroes|stitch|spider-man/.test(name)) {
-        return 'characters';
-      }
-      // 3. Espectáculos y Shows
-      if (type === 'SHOW' || (item.showtimes && item.showtimes.length > 0) || /show|espectáculo|parade|cabalgata|desfile|musical|stunt show|teatro|fuegos|fireworks|illumination/.test(name)) {
-        return 'shows';
-      }
-      // 4. Restauración
-      if (type === 'RESTAURANT' || type === 'DINING' || /restaurante|restaurant|café|cafe|grill|buffet|cantina|diner|burger|helados|ice cream|snack|pizzeria|tavern|taberna|bar/.test(name)) {
-        return 'dining';
-      }
-      // 5. Atracciones
+      if (type === 'MERCHANDISE' || type === 'RETAIL' || /tienda|shop|boutique|store|bazar|souvenir|regalos|bazaar/.test(name)) return 'shops';
+      if (/meet|encuentro|personaje|rencontre|greeting|photocall|princesa|mickey|donald|goofy|superman y batman|superhéroes|stitch|spider-man/.test(name)) return 'characters';
+      if (type === 'SHOW' || (item.showtimes && item.showtimes.length > 0) || /show|espectáculo|parade|cabalgata|desfile|musical|stunt show|teatro|fuegos|fireworks|illumination/.test(name)) return 'shows';
+      if (type === 'RESTAURANT' || type === 'DINING' || /restaurante|restaurant|café|cafe|grill|buffet|cantina|diner|burger|helados|ice cream|snack|pizzeria|tavern|taberna|bar/.test(name)) return 'dining';
       return 'attractions';
     }
 
-    // Icono específico según nombre de atracción
     function getAttractionIcon(item, category) {
       const n = item.name.toLowerCase();
       if (category === 'shows') return '🎭';
@@ -233,7 +366,6 @@
       if (category === 'dining') return '🍔';
       if (category === 'shops') return '🛍️';
 
-      // Atracciones mecánicas específicas
       if (/coaster|montaña|stunt|express|batman|superman|hulk|space|flight|rock|shadows|inver|loop/.test(n)) return '🎢';
       if (/water|rio|river|cataratas|rapidos|splash|flume|cascadas|barca/.test(n)) return '🌊';
       if (/terror|hotel|haunted|fantasma|phantom|mansion|tomb|miedo|horror|inferno/.test(n)) return '👻';
@@ -243,24 +375,23 @@
       return '🎡';
     }
 
-    // Carga de todos los datos
+    // Cargar endpoints en paralelo
     async function cargarTodo() {
       const parkId = document.getElementById('parkSelect').value;
       const loader = document.getElementById('loadingStatus');
-      const container = document.getElementById('cardsContainer');
 
       loader.classList.remove('hidden');
-      container.innerHTML = '';
+      document.getElementById('cardsContainer').innerHTML = '';
       document.getElementById('lastUpdateTxt').textContent = 'Sincronizando...';
 
       try {
         await Promise.allSettled([
-          cargarZonas(parkId),
+          cargarZonasYCoords(parkId),
           cargarHorarios(parkId),
           cargarLive(parkId)
         ]);
         const ahora = new Date();
-        document.getElementById('lastUpdateTxt').textContent = `Actualizado ${ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        document.getElementById('lastUpdateTxt').textContent = `Actualizado ${ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
         actualizarContadorRidden();
       } catch (err) {
         console.error('Error:', err);
@@ -269,20 +400,22 @@
       }
     }
 
-    // Endpoint /children (Zonas)
-    async function cargarZonas(parkId) {
+    // Extraer tanto Zonas como Coordenadas desde /children
+    async function cargarZonasYCoords(parkId) {
       try {
         const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/children`);
         if (!res.ok) return;
         const data = await res.json();
-        landMap = parseLands(data);
+        parseHierarchy(data);
       } catch {
         landMap = {};
+        coordsMap = {};
       }
     }
 
-    function parseLands(data) {
-      const mapping = {};
+    function parseHierarchy(data) {
+      landMap = {};
+      coordsMap = {};
       const landsById = {};
       const items = Array.isArray(data) ? data : (data.children || []);
 
@@ -290,6 +423,9 @@
         if (!nodes) return;
         nodes.forEach(n => {
           if (n.entityType === 'LAND') landsById[n.id] = n.name;
+          if (n.location && n.location.latitude && n.location.longitude) {
+            coordsMap[n.id] = { lat: n.location.latitude, lng: n.location.longitude };
+          }
           if (n.children) buscarLands(n.children);
         });
       }
@@ -301,15 +437,20 @@
           let activeLand = currentLand;
           if (n.entityType === 'LAND') activeLand = n.name;
           else if (n.parentId && landsById[n.parentId]) activeLand = landsById[n.parentId];
-          if (n.id && activeLand && n.entityType !== 'LAND') mapping[n.id] = activeLand;
+
+          if (n.id && activeLand && n.entityType !== 'LAND') {
+            landMap[n.id] = activeLand;
+          }
+          if (n.location && n.location.latitude && n.location.longitude) {
+            coordsMap[n.id] = { lat: n.location.latitude, lng: n.location.longitude };
+          }
           if (n.children) asignar(n.children, activeLand);
         });
       }
       asignar(items, null);
-      return mapping;
     }
 
-    // Endpoint /schedule (Horario hoy)
+    // Horarios hoy (/schedule)
     async function cargarHorarios(parkId) {
       const scheduleTxt = document.getElementById('scheduleText');
       try {
@@ -332,7 +473,7 @@
       }
     }
 
-    // Endpoint /live (Tiempos en vivo)
+    // Tiempos en vivo (/live)
     async function cargarLive(parkId) {
       const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/live`);
       if (!res.ok) throw new Error();
@@ -352,7 +493,11 @@
         else if (estado === 'DOWN') pausa++;
         else cerradas++;
 
-        // Detección de reaperturas
+        // Guardar coordenadas si vienen directamente en /live
+        if (item.location && item.location.latitude && item.location.longitude) {
+          coordsMap[item.id] = { lat: item.location.latitude, lng: item.location.longitude };
+        }
+
         if (prevStatus[item.id] === 'DOWN' && estado === 'OPERATING') {
           reabiertas.push(item.name);
         }
@@ -374,10 +519,9 @@
 
       prevStatus = newStatus;
       prevWaitTimes = newWaits;
-      renderLista();
+      actualizarVistas();
     }
 
-    // Manejadores de Filtros
     function setCatFilter(cat) {
       catFiltro = cat;
       document.querySelectorAll('.cat-chip').forEach(btn => {
@@ -385,7 +529,7 @@
           ? 'cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-indigo-600 text-white'
           : 'cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800';
       });
-      renderLista();
+      actualizarVistas();
     }
 
     function setStatusFilter(stat) {
@@ -395,20 +539,23 @@
           ? 'status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-800 text-slate-100 border border-slate-600'
           : 'status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800';
       });
-      renderLista();
+      actualizarVistas();
     }
 
-    // Render de la lista
-    function renderLista() {
-      const container = document.getElementById('cardsContainer');
+    function actualizarVistas() {
+      if (viewMode === 'map') {
+        renderMapa();
+      } else {
+        renderLista();
+      }
+    }
+
+    // Filtrar elementos según búsqueda y botones
+    function getElementosFiltrados() {
       const query = document.getElementById('searchInput').value.trim().toLowerCase();
-      const sortType = document.getElementById('sortSelect').value;
       const favs = getFavoritos();
-      const ridden = getRiddenToday();
 
-      container.innerHTML = '';
-
-      let filtradas = entidades.filter(item => {
+      return entidades.filter(item => {
         const landName = (landMap[item.id] || '').toLowerCase();
         const matchesQuery = item.name.toLowerCase().includes(query) || landName.includes(query);
         if (!matchesQuery) return false;
@@ -418,11 +565,9 @@
         const status = item.status || 'CLOSED';
         const wait = item.queue?.STANDBY?.waitTime;
 
-        // Filtro Categoría
         if (catFiltro === 'favs' && !isFav) return false;
         if (catFiltro !== 'all' && catFiltro !== 'favs' && cat !== catFiltro) return false;
 
-        // Filtro Estado
         if (statusFiltro === 'open' && status !== 'OPERATING') return false;
         if (statusFiltro === 'walkon' && (status !== 'OPERATING' || wait == null || wait >= 15)) return false;
         if (statusFiltro === 'down' && status !== 'DOWN') return false;
@@ -432,8 +577,95 @@
 
         return true;
       });
+    }
 
-      // Ordenación
+    // RENDERIZADO DEL MAPA
+    function renderMapa() {
+      if (!map || !markersLayer) return;
+      markersLayer.clearLayers();
+
+      const items = getElementosFiltrados();
+      const favs = getFavoritos();
+
+      items.forEach(item => {
+        const coords = coordsMap[item.id];
+        if (!coords || !coords.lat || !coords.lng) return;
+
+        const cat = getCategory(item);
+        const icon = getAttractionIcon(item, cat);
+        const wait = item.queue?.STANDBY?.waitTime;
+        const status = item.status || 'CLOSED';
+
+        let badgeBg = 'bg-slate-800 text-slate-300 border-slate-700';
+        let badgeText = `${icon}`;
+
+        if (status === 'OPERATING') {
+          if (wait != null) {
+            badgeText = `${icon} ${wait}m`;
+            badgeBg = wait > 45 ? 'bg-rose-600 text-white border-rose-400' :
+                      wait > 20 ? 'bg-amber-600 text-white border-amber-400' :
+                      'bg-emerald-600 text-white border-emerald-400';
+          } else {
+            badgeText = `${icon}`;
+            badgeBg = 'bg-emerald-600 text-white border-emerald-400';
+          }
+        } else if (status === 'DOWN') {
+          badgeText = `🛠️ Pausa`;
+          badgeBg = 'bg-amber-600 text-white border-amber-400';
+        } else {
+          badgeText = `${icon}`;
+          badgeBg = 'bg-slate-800 text-slate-400 border-slate-700 opacity-70';
+        }
+
+        const markerHtml = `
+          <div class="px-2 py-1 rounded-full text-[10px] font-bold shadow-lg border flex items-center gap-1 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap cursor-pointer transition transform hover:scale-125 ${badgeBg}">
+            ${badgeText}
+          </div>
+        `;
+
+        const customIcon = L.divIcon({
+          className: 'custom-park-pin',
+          html: markerHtml,
+          iconSize: [0, 0]
+        });
+
+        const marker = L.marker([coords.lat, coords.lng], { icon: customIcon });
+        marker._itemId = item.id;
+
+        // Popup interactivo al pulsar el pin
+        const land = landMap[item.id];
+        const popupContent = `
+          <div class="text-xs p-1 min-w-[170px] space-y-1.5">
+            <div class="font-bold text-slate-100 flex items-center justify-between gap-2">
+              <span>${item.name}</span>
+              <button onclick="toggleFavorito('${item.id}', event)" class="text-sm">${favs.includes(item.id) ? '⭐' : '☆'}</button>
+            </div>
+            ${land ? `<p class="text-[10px] text-indigo-400 font-medium">${land}</p>` : ''}
+            <div class="flex items-center justify-between pt-1 border-t border-slate-800 text-[11px]">
+              <span class="text-slate-400">Estado:</span>
+              <span class="font-semibold ${status === 'OPERATING' ? 'text-emerald-400' : 'text-slate-400'}">
+                ${status === 'OPERATING' ? (wait != null ? `${wait} min` : 'Abierto') : (status === 'DOWN' ? 'En pausa' : 'Cerrado')}
+              </span>
+            </div>
+            ${item.queue?.SINGLE_RIDER?.waitTime != null ? `<div class="text-[10px] text-indigo-300">⚡ Single: ${item.queue.SINGLE_RIDER.waitTime}m</div>` : ''}
+          </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        markersLayer.addLayer(marker);
+      });
+    }
+
+    // RENDERIZADO DE LA LISTA
+    function renderLista() {
+      const container = document.getElementById('cardsContainer');
+      const sortType = document.getElementById('sortSelect').value;
+      const favs = getFavoritos();
+      const ridden = getRiddenToday();
+
+      container.innerHTML = '';
+      let filtradas = getElementosFiltrados();
+
       filtradas.sort((a, b) => {
         if (catFiltro === 'all') {
           const favA = favs.includes(a.id) ? 1 : 0;
@@ -454,7 +686,6 @@
         return;
       }
 
-      // VISTA POR ZONAS (LANDS)
       if (viewMode === 'zones') {
         const zonas = {};
         filtradas.forEach(item => {
@@ -481,14 +712,13 @@
           container.appendChild(sec);
         });
       } else {
-        // VISTA LISTA PLANA
         filtradas.forEach(item => {
           container.appendChild(crearCard(item, favs, ridden));
         });
       }
     }
 
-    // Creación de cada tarjeta de elemento
+    // Creación de cada tarjeta
     function crearCard(item, favs, ridden) {
       const cat = getCategory(item);
       const icon = getAttractionIcon(item, cat);
@@ -499,8 +729,8 @@
       const singleWait = item.queue?.SINGLE_RIDER?.waitTime;
       const paidReturn = item.queue?.PAID_RETURN_TIME;
       const land = landMap[item.id];
+      const hasCoords = !!coordsMap[item.id];
 
-      // Tendencia de espera (↑ / ↓)
       let trendHtml = '';
       if (prevWaitTimes[item.id] != null && wait != null) {
         const diff = wait - prevWaitTimes[item.id];
@@ -508,7 +738,6 @@
         else if (diff < 0) trendHtml = `<span class="text-[10px] text-emerald-400 font-bold block">↓ ${diff}m</span>`;
       }
 
-      // Badge de estado y tiempo de espera
       let badgeHtml = '';
       if (status === 'OPERATING') {
         if (wait != null) {
@@ -531,7 +760,6 @@
         badgeHtml = `<span class="text-xs px-2 py-0.5 rounded-lg bg-slate-900 text-slate-500 border border-slate-800">Cerrado</span>`;
       }
 
-      // Píldoras de información adicional (Single Rider, Pases de pago, Pases de Show)
       const pills = [];
       if (singleWait != null) {
         pills.push(`<span class="inline-flex items-center text-[10px] bg-indigo-950/60 text-indigo-300 border border-indigo-800/40 px-2 py-0.5 rounded-md">⚡ Single: <b>${singleWait}m</b></span>`);
@@ -543,7 +771,6 @@
         pills.push(`<span class="inline-flex items-center text-[10px] bg-purple-950/60 text-purple-300 border border-purple-800/40 px-2 py-0.5 rounded-md">🎟️ Pase: ${horaIni}-${horaFin}${precio}</span>`);
       }
 
-      // Cuenta atrás para espectáculos
       if (item.showtimes && item.showtimes.length > 0) {
         const prox = calcularProximoShow(item.showtimes);
         if (prox) {
@@ -586,6 +813,11 @@
           </div>
           <div class="flex items-center gap-2">
             ${badgeHtml}
+            ${hasCoords ? `
+              <button onclick="irAlMapa('${item.id}')" class="text-xs p-1 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white" title="Ver en el mapa">
+                📍
+              </button>
+            ` : ''}
             ${cat === 'attractions' ? `
               <button onclick="toggleRidden('${item.id}', event)" class="text-xs p-1 rounded-lg border ${isRidden ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-400' : 'border-slate-800 text-slate-600 hover:text-slate-400'}" title="Marcar como montada">
                 ✓
@@ -621,7 +853,6 @@
       return null;
     }
 
-    // Auto-refresco
     function toggleAutoRefresh() {
       const isChecked = document.getElementById('autoRefreshCheck').checked;
       if (isChecked) {
