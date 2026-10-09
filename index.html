@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tiempos de Parques</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-12">
+
+  <!-- Cabecera fija -->
+  <header class="sticky top-0 z-20 bg-slate-800/90 backdrop-blur border-b border-slate-700 px-4 py-3">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      <h1 class="text-lg font-bold flex items-center gap-2">
+        🎢 <span>WaitTimes</span>
+      </h1>
+      <button id="refreshBtn" onclick="cargarTiempos()" class="text-xs bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-full font-medium transition">
+        Actualizar
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
+    <!-- Selector de Parque -->
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Parque seleccionado</label>
+      <select id="parkSelect" onchange="cargarTiempos()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <!-- Puedes añadir o cambiar los UUIDs que uses frecuentemente -->
+        <option value="75ea578a-adc8-4116-a54d-dccb60765ef9">Magic Kingdom (Walt Disney World)</option>
+        <option value="47f90d2c-e191-49f8-b535-f889d4b0f023">Disneyland Park (París)</option>
+        <option value="e8d0207f-9452-454e-976c-372986427d2c">PortAventura Park</option>
+        <option value="6cb3d4b6-7eb5-40c2-a9bd-a841264c92b2">Parque Warner Madrid</option>
+      </select>
+    </div>
+
+    <!-- Buscador / Filtro -->
+    <div>
+      <input type="text" id="searchInput" oninput="filtrarAtracciones()" placeholder="Buscar atracción..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    </div>
+
+    <!-- Estado de carga / Error -->
+    <div id="statusMessage" class="text-center py-4 text-xs text-slate-400">Cargando datos en vivo...</div>
+
+    <!-- Lista de Atracciones -->
+    <div id="ridesList" class="space-y-2"></div>
+
+    <!-- Atribución requerida por la API -->
+    <footer class="pt-6 text-center text-xs text-slate-500">
+      <a href="https://themeparks.wiki" target="_blank" class="underline hover:text-slate-400">
+        Powered by ThemeParks.wiki
+      </a>
+    </footer>
+  </main>
+
+  <script>
+    let todasLasAtracciones = [];
+
+    async function cargarTiempos() {
+      const parkId = document.getElementById('parkSelect').value;
+      const statusMsg = document.getElementById('statusMessage');
+      const listContainer = document.getElementById('ridesList');
+
+      statusMsg.textContent = 'Obteniendo tiempos en vivo...';
+      statusMsg.classList.remove('hidden');
+      listContainer.innerHTML = '';
+
+      try {
+        const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/live`);
+        if (!res.ok) throw new Error('Error al conectar con la API');
+        const data = await res.json();
+
+        // Filtrar y ordenar: solo elementos de tipo atracción o con cola
+        todasLasAtracciones = (data.liveData || [])
+          .filter(item => item.entityType === 'ATTRACTION' || item.queue)
+          .sort((a, b) => {
+            const waitA = a.queue?.STANDBY?.waitTime ?? -1;
+            const waitB = b.queue?.STANDBY?.waitTime ?? -1;
+            return waitB - waitA; // Las de más cola primero
+          });
+
+        statusMsg.classList.add('hidden');
+        filtrarAtracciones();
+      } catch (err) {
+        statusMsg.textContent = 'No se pudieron cargar los datos. Revisa la conexión.';
+        console.error(err);
+      }
+    }
+
+    function filtrarAtracciones() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const listContainer = document.getElementById('ridesList');
+      listContainer.innerHTML = '';
+
+      const filtradas = todasLasAtracciones.filter(r => r.name.toLowerCase().includes(query));
+
+      if (filtradas.length === 0) {
+        listContainer.innerHTML = '<p class="text-center text-xs text-slate-500 py-4">No se encontraron atracciones.</p>';
+        return;
+      }
+
+      filtradas.forEach(item => {
+        const wait = item.queue?.STANDBY?.waitTime;
+        const status = item.status || 'CLOSED';
+
+        let badge = '';
+        if (status === 'OPERATING') {
+          if (wait !== undefined && wait !== null) {
+            const colorClass = wait > 45 ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' :
+                               wait > 20 ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
+                               'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+            badge = `<div class="text-right">
+                       <span class="text-base font-bold px-2.5 py-1 rounded-lg border ${colorClass}">${wait} min</span>
+                     </div>`;
+          } else {
+            badge = `<span class="text-xs px-2 py-0.5 rounded bg-emerald-900/40 text-emerald-300">Abierta</span>`;
+          }
+        } else if (status === 'DOWN') {
+          badge = `<span class="text-xs px-2 py-0.5 rounded bg-amber-900/40 text-amber-300">Interrumpida</span>`;
+        } else {
+          badge = `<span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">Cerrada</span>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'bg-slate-800 border border-slate-700/60 p-3 rounded-xl flex items-center justify-between gap-3 shadow-sm';
+        card.innerHTML = `
+          <div class="min-w-0">
+            <h3 class="font-medium text-sm text-slate-100 truncate">${item.name}</h3>
+            ${item.queue?.SINGLE_RIDER?.waitTime ? `<span class="text-[10px] text-indigo-400">Single Rider: ${item.queue.SINGLE_RIDER.waitTime}m</span>` : ''}
+          </div>
+          ${badge}
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    // Cargar automáticamente al inicio
+    cargarTiempos();
+  </script>
+</body>
+</html>
