@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Un Díaz en Disney - Tiempos en Vivo</title>
+  <title>Un Díaz en Disney - Tiempos & Zonas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Estilos y scripts de Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -117,7 +117,7 @@
 
   <main class="max-w-md mx-auto px-4 pt-3 space-y-3">
 
-    <!-- Selector de Parque agrupado por Regiones con IDs actualizados -->
+    <!-- Selector de Parque agrupado por Regiones -->
     <div>
       <select id="parkSelect" onchange="cambiarDeParque()" class="w-full bg-white border border-slate-300 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none shadow-sm">
         <optgroup label="🇪🇸 España">
@@ -183,7 +183,7 @@
 
     <!-- BOTONES TÁCTICOS Y DE REDES SOCIALES -->
     <div class="grid grid-cols-3 gap-2 text-xs">
-      <!-- 1. Recomendador inteligente -->
+      <!-- 1. Recomendador inteligente aleatorio -->
       <button onclick="recomendarAtraccion()" class="bg-white border border-slate-300 hover:border-slate-400 p-2.5 rounded-2xl font-bold text-slate-800 flex flex-col items-center justify-center text-center shadow-sm active:scale-95 transition">
         <span class="text-base mb-0.5">🎯</span>
         <span class="text-[11px]">¿A cuál voy?</span>
@@ -200,7 +200,7 @@
       </button>
     </div>
 
-    <!-- Fila 1: Filtro de Categorías con subfiltro Coasters -->
+    <!-- Fila 1: Filtro de Categorías -->
     <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-xs">
       <button onclick="setCatFilter('all')" class="cat-chip px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition shadow-sm border" data-cat="all">Todos</button>
       <button onclick="setCatFilter('favs')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="favs">⭐ Favoritos</button>
@@ -266,19 +266,22 @@
     </footer>
   </main>
 
-  <!-- MODAL: ¿A CUÁL VOY AHORA? -->
+  <!-- ======================================================== -->
+  <!-- MODAL: ¿A CUÁL VOY AHORA? (ALEATORIO CON BOTÓN 'OTRA')   -->
+  <!-- ======================================================== -->
   <div id="recModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 text-center space-y-3">
-      <span class="text-4xl block">🎯</span>
-      <h3 class="text-base font-extrabold text-slate-900">Tu mejor opción ahora mismo:</h3>
-      <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+      <span class="text-4xl block">🎲</span>
+      <h3 class="text-base font-extrabold text-slate-900">Sugerencia de cola rápida:</h3>
+      <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5">
         <h4 id="recRideName" class="text-sm font-black text-blue-950">---</h4>
         <div id="recRideBadge" class="text-xs font-extrabold inline-block px-3 py-1 rounded-xl">-- min</div>
         <p id="recRideReason" class="text-xs text-slate-600 font-medium pt-1">---</p>
       </div>
       <div class="flex gap-2 pt-1">
-        <button id="recBtnMap" class="flex-1 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition">📍 Ver en mapa</button>
-        <button onclick="cerrarRecModal()" class="flex-1 py-2 text-xs font-bold bg-blue-950 text-white rounded-xl transition">Entendido</button>
+        <button id="recBtnMap" class="flex-1 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition">📍 Mapa</button>
+        <button onclick="recomendarAtraccion()" class="flex-1 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl transition shadow-sm active:scale-95">🎲 Otra</button>
+        <button onclick="cerrarRecModal()" class="flex-1 py-2 text-xs font-bold bg-blue-950 text-white rounded-xl transition">Listo</button>
       </div>
     </div>
   </div>
@@ -719,40 +722,60 @@
       return { icon: '🌤️', desc: 'Nublado' };
     }
 
-    // RECOMENDADOR INTELIGENTE: ¿A CUÁL VOY?
+    // ========================================================
+    // RECOMENDADOR INTELIGENTE ALEATORIO (≤ 20 MINUTOS)
+    // ========================================================
     function recomendarAtraccion() {
       const favs = getFavoritos();
       const ridden = getRiddenToday();
-      const abiertas = entidades.filter(e => e.status === 'OPERATING' && (e.entityType === 'ATTRACTION' || !e.showtimes));
+      
+      // Filtrar atracciones abiertas que reporten tiempo numérico
+      const abiertas = entidades.filter(e => 
+        e.status === 'OPERATING' && 
+        (e.entityType === 'ATTRACTION' || !e.showtimes) &&
+        e.queue?.STANDBY?.waitTime != null
+      );
 
       if (abiertas.length === 0) {
-        alert('No hay atracciones abiertas reportando esperas en este momento.');
+        alert('No hay atracciones abiertas reportando tiempos de espera en este momento.');
         return;
       }
 
-      const noMontadas = abiertas.filter(e => !ridden.includes(e.id));
-      const pool = noMontadas.length > 0 ? noMontadas : abiertas;
+      // 1. Filtrar todas las atracciones con 20 minutos o menos
+      const rapidas = abiertas.filter(e => e.queue.STANDBY.waitTime <= 20);
 
       let elegida = null;
       let motivo = '';
 
-      const favBaja = pool.find(e => favs.includes(e.id) && (e.queue?.STANDBY?.waitTime ?? 99) <= 30);
-      if (favBaja) {
-        elegida = favBaja;
-        motivo = `⭐ ¡Es tu favorita y la cola está baja (${elegida.queue.STANDBY.waitTime} min)!`;
-      } else {
-        const conTiempo = pool.filter(e => e.queue?.STANDBY?.waitTime != null)
-          .sort((a,b) => a.queue.STANDBY.waitTime - b.queue.STANDBY.waitTime);
+      if (rapidas.length > 0) {
+        // Priorizar las que aún no te has montado hoy
+        const rapidasNoMontadas = rapidas.filter(e => !ridden.includes(e.id));
+        const bolsaEleccion = rapidasNoMontadas.length > 0 ? rapidasNoMontadas : rapidas;
 
-        if (conTiempo.length > 0) {
-          elegida = conTiempo[0];
-          motivo = `⚡ Es la atracción con menos cola actual (${elegida.queue.STANDBY.waitTime} min) y aún no te has montado hoy.`;
+        // Selección 100% aleatoria entre las opciones de ≤ 20 min
+        const randomIndex = Math.floor(Math.random() * bolsaEleccion.length);
+        elegida = bolsaEleccion[randomIndex];
+
+        const isFav = favs.includes(elegida.id);
+        const pendiente = !ridden.includes(elegida.id);
+
+        if (isFav) {
+          motivo = `⭐ ¡Es tu favorita, con solo ${elegida.queue.STANDBY.waitTime} min de cola!`;
+        } else if (pendiente) {
+          motivo = `🎲 Sugerida al azar: ¡Solo ${elegida.queue.STANDBY.waitTime} min y aún la tienes pendiente hoy!`;
         } else {
-          elegida = pool[0];
-          motivo = '🟢 Está operando con acceso fluido.';
+          motivo = `⚡ Sugerida al azar entre las colas rápidas (≤ 20 min).`;
         }
+      } else {
+        // En días muy llenos donde todo supere 20 min: elegir al azar entre las 5 con menor tiempo
+        const ordenadas = [...abiertas].sort((a,b) => a.queue.STANDBY.waitTime - b.queue.STANDBY.waitTime);
+        const top5Bajas = ordenadas.slice(0, 5);
+        const randomIndex = Math.floor(Math.random() * top5Bajas.length);
+        elegida = top5Bajas[randomIndex];
+        motivo = `⚠️ Hoy el parque está muy lleno; elegida al azar entre las de menor espera actual (${elegida.queue.STANDBY.waitTime} min).`;
       }
 
+      // Mostrar en modal
       document.getElementById('recRideName').textContent = elegida.name;
       const wait = elegida.queue?.STANDBY?.waitTime;
       const badge = document.getElementById('recRideBadge');
@@ -1099,6 +1122,7 @@
       }
     }
 
+    // Live data con caché offline automática
     async function cargarLive(parkId) {
       const offlineBanner = document.getElementById('offlineBanner');
       try {
