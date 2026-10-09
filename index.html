@@ -12,145 +12,143 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Filtro para transformar OpenStreetMap en modo oscuro sin requerir API key */
-    .leaflet-tile {
-      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
-    }
-
-    /* Adaptación oscura de popups de Leaflet */
+    /* Popups claros para el mapa */
     .leaflet-popup-content-wrapper {
-      background: #0f172a !important;
-      color: #f1f5f9 !important;
-      border: 1px solid #334155 !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
       border-radius: 1rem !important;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15) !important;
       padding: 0.25rem !important;
     }
     .leaflet-popup-tip {
-      background: #0f172a !important;
-      border: 1px solid #334155 !important;
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
     }
     .leaflet-popup-close-button {
-      color: #94a3b8 !important;
+      color: #64748b !important;
       padding: 6px !important;
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen pb-16 antialiased selection:bg-indigo-500 selection:text-white">
+<body id="pageBody" class="bg-slate-100 text-slate-800 min-h-screen pb-16 antialiased transition-colors duration-300">
 
   <!-- Banner de reaperturas instantáneas ("Caza-Colas") -->
-  <div id="reopeningBanner" class="hidden bg-emerald-600 text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between sticky top-0 z-50 shadow-xl animate-pulse">
+  <div id="reopeningBanner" class="hidden text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between sticky top-0 z-50 shadow-xl animate-pulse">
     <div class="flex items-center gap-2">
       <span class="text-base">🚨</span>
       <span id="reopeningText">¡Atracción acaba de reabrir!</span>
     </div>
-    <button onclick="document.getElementById('reopeningBanner').classList.add('hidden')" class="text-white/80 hover:text-white text-base font-bold ml-2">✕</button>
+    <button onclick="document.getElementById('reopeningBanner').classList.add('hidden')" class="text-white/90 hover:text-white text-base font-bold ml-2">✕</button>
   </div>
 
-  <!-- Cabecera fija -->
-  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-lg">
+  <!-- Cabecera fija con franja temática inferior -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-4 pt-3 pb-2.5 shadow-sm">
     <div class="max-w-md mx-auto flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <span class="text-xl">🎢</span>
+        <span id="headerIcon" class="text-xl transition-transform duration-300">🪄</span>
         <div>
-          <h1 class="text-sm font-bold tracking-tight">UnDiazEnDisney APP</h1>
-          <p id="lastUpdateTxt" class="text-[10px] text-slate-400">Iniciando...</p>
+          <h1 id="headerTitle" class="text-sm font-extrabold tracking-tight transition-colors duration-300">WaitTimes</h1>
+          <p id="lastUpdateTxt" class="text-[10px] text-slate-500 font-medium">Iniciando...</p>
         </div>
       </div>
       <div class="flex items-center gap-1.5">
         <!-- Selector de Vista: Lista / Zonas / Mapa -->
-        <div class="flex bg-slate-800 p-0.5 rounded-xl border border-slate-700 text-xs">
-          <button id="btnViewList" onclick="setViewMode('list')" class="px-2 py-1 rounded-lg font-medium transition text-slate-400" title="Vista Lista">📋</button>
-          <button id="btnViewZones" onclick="setViewMode('zones')" class="px-2 py-1 rounded-lg font-medium transition bg-indigo-600 text-white shadow" title="Vista Zonas">🗺️</button>
-          <button id="btnViewMap" onclick="setViewMode('map')" class="px-2 py-1 rounded-lg font-medium transition text-slate-400" title="Vista Mapa">📍</button>
+        <div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-300 text-xs">
+          <button id="btnViewList" onclick="setViewMode('list')" class="px-2 py-1 rounded-lg font-medium transition text-slate-600" title="Vista Lista">📋</button>
+          <button id="btnViewZones" onclick="setViewMode('zones')" class="px-2 py-1 rounded-lg font-bold transition shadow-sm" title="Vista Zonas">🗺️</button>
+          <button id="btnViewMap" onclick="setViewMode('map')" class="px-2 py-1 rounded-lg font-medium transition text-slate-600" title="Vista Mapa">📍</button>
         </div>
-        <!-- Botón refrescar -->
-        <button id="refreshBtn" onclick="cargarTodo()" class="text-xs bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium p-2 rounded-xl transition shadow">
+        <!-- Botón refrescar temático -->
+        <button id="refreshBtn" onclick="cargarTodo()" class="text-xs active:scale-95 font-medium p-2 rounded-xl transition shadow-sm">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
         </button>
       </div>
     </div>
+    <!-- Franja inferior de color temática (ola de Mickey, hielo, bat-oro o arcoíris) -->
+    <div id="headerAccentBar" class="h-1 w-full max-w-md mx-auto mt-2.5 rounded-full transition-all duration-500"></div>
   </header>
 
   <main class="max-w-md mx-auto px-4 pt-3 space-y-3">
 
     <!-- Selector de Parque -->
     <div>
-      <select id="parkSelect" onchange="cambiarDeParque()" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner">
-        <option value="5adbd2f7-3694-4d23-aaec-4037a056573f">Parque Warner Madrid</option>
-        <option value="1ea86991-e2c2-4771-8a32-c6e14c8298a9">Parque de Atracciones de Madrid</option>
+      <select id="parkSelect" onchange="cambiarDeParque()" class="w-full bg-white border border-slate-300 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none shadow-sm">
         <option value="dae968d5-630d-4719-8b06-3d107e944401">Disneyland Park (París)</option>
         <option value="ca888437-ebb4-4d50-aed2-d227f7096968">Disney Adventure World (París)</option>
+        <option value="5adbd2f7-3694-4d23-aaec-4037a056573f">Parque Warner Madrid</option>
+        <option value="1ea86991-e2c2-4771-8a32-c6e14c8298a9">Parque de Atracciones de Madrid</option>
       </select>
     </div>
 
     <!-- Panel de Horario y Resumen de Estado -->
-    <div class="bg-gradient-to-br from-slate-900 to-slate-850 border border-slate-800 rounded-2xl p-3 shadow-sm space-y-2">
+    <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-2.5">
       <div class="flex items-center justify-between text-xs">
-        <div class="flex items-center gap-1.5 font-medium text-slate-300">
+        <div class="flex items-center gap-1.5 font-bold" id="scheduleTextWrapper">
           <span>🕒</span>
           <span id="scheduleText">Cargando horario oficial...</span>
         </div>
-        <label class="flex items-center gap-1 text-[11px] text-slate-400 cursor-pointer">
-          <input type="checkbox" id="autoRefreshCheck" onchange="toggleAutoRefresh()" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+        <label class="flex items-center gap-1 text-[11px] font-medium text-slate-500 cursor-pointer">
+          <input type="checkbox" id="autoRefreshCheck" onchange="toggleAutoRefresh()" class="rounded border-slate-300 focus:ring-0">
           Auto 60s
         </label>
       </div>
 
       <!-- Métricas del parque -->
-      <div class="grid grid-cols-4 gap-1.5 pt-1 border-t border-slate-800/80 text-center text-[10px]">
-        <div class="bg-emerald-950/30 border border-emerald-900/40 rounded-xl py-1 px-1">
-          <span class="text-emerald-400 font-bold text-sm block" id="countOpen">0</span>
-          <span class="text-slate-400">Abiertas</span>
+      <div class="grid grid-cols-4 gap-1.5 pt-1 border-t border-slate-100 text-center text-[10px]">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl py-1 px-1">
+          <span class="text-emerald-700 font-extrabold text-sm block" id="countOpen">0</span>
+          <span class="text-emerald-900 font-medium">Abiertas</span>
         </div>
-        <div class="bg-amber-950/30 border border-amber-900/40 rounded-xl py-1 px-1">
-          <span class="text-amber-400 font-bold text-sm block" id="countDown">0</span>
-          <span class="text-slate-400">En pausa</span>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl py-1 px-1">
+          <span class="text-amber-700 font-extrabold text-sm block" id="countDown">0</span>
+          <span class="text-amber-900 font-medium">En pausa</span>
         </div>
-        <div class="bg-slate-800/40 border border-slate-800 rounded-xl py-1 px-1">
-          <span class="text-slate-400 font-bold text-sm block" id="countClosed">0</span>
-          <span class="text-slate-500">Cerradas</span>
+        <div class="bg-slate-100 border border-slate-200 rounded-xl py-1 px-1">
+          <span class="text-slate-600 font-extrabold text-sm block" id="countClosed">0</span>
+          <span class="text-slate-500 font-medium">Cerradas</span>
         </div>
-        <div class="bg-indigo-950/30 border border-indigo-900/40 rounded-xl py-1 px-1">
-          <span class="text-indigo-400 font-bold text-sm block" id="countRidden">0</span>
-          <span class="text-slate-400">Montadas</span>
+        <div class="bg-slate-100 border border-slate-200 rounded-xl py-1 px-1">
+          <span class="text-slate-800 font-extrabold text-sm block" id="countRidden">0</span>
+          <span class="text-slate-600 font-medium">Montadas</span>
         </div>
       </div>
     </div>
 
     <!-- Fila 1: Filtro de Categorías -->
     <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-xs">
-      <button onclick="setCatFilter('all')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-indigo-600 text-white" data-cat="all">Todos</button>
-      <button onclick="setCatFilter('favs')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="favs">⭐ Favoritos</button>
-      <button onclick="setCatFilter('attractions')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="attractions">🎢 Atracciones</button>
-      <button onclick="setCatFilter('shows')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="shows">🎭 Shows</button>
-      <button onclick="setCatFilter('characters')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="characters">📸 Personajes</button>
-      <button onclick="setCatFilter('dining')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="dining">🍔 Restaurantes</button>
-      <button onclick="setCatFilter('shops')" class="cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-cat="shops">🛍️ Tiendas</button>
+      <button onclick="setCatFilter('all')" class="cat-chip px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition shadow-sm border" data-cat="all">Todos</button>
+      <button onclick="setCatFilter('favs')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="favs">⭐ Favoritos</button>
+      <button onclick="setCatFilter('attractions')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="attractions">🎢 Atracciones</button>
+      <button onclick="setCatFilter('shows')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="shows">🎭 Shows</button>
+      <button onclick="setCatFilter('characters')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="characters">📸 Personajes</button>
+      <button onclick="setCatFilter('dining')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="dining">🍔 Restaurantes</button>
+      <button onclick="setCatFilter('shops')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="shops">🛍️ Tiendas</button>
     </div>
 
     <!-- Fila 2: Filtro de Estados / Oportunidades -->
     <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-[11px]">
-      <button onclick="setStatusFilter('any')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-800 text-slate-100 border border-slate-600" data-stat="any">Cualquier estado</button>
-      <button onclick="setStatusFilter('open')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="open">🟢 Abiertas</button>
-      <button onclick="setStatusFilter('walkon')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="walkon">⚡ Sin cola (&lt;15m)</button>
-      <button onclick="setStatusFilter('down')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="down">🛠️ En pausa</button>
-      <button onclick="setStatusFilter('refurb')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="refurb">🚧 Mantenimiento</button>
-      <button onclick="setStatusFilter('closed')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="closed">⛔ Cerradas</button>
-      <button onclick="setStatusFilter('single')" class="status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800" data-stat="single">⚡ Single Rider</button>
+      <button onclick="setStatusFilter('any')" class="status-chip px-2.5 py-1 rounded-lg font-bold whitespace-nowrap transition shadow-sm border" data-stat="any">Cualquier estado</button>
+      <button onclick="setStatusFilter('open')" class="status-chip px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition border" data-stat="open">🟢 Abiertas</button>
+      <button onclick="setStatusFilter('walkon')" class="status-chip px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition border" data-stat="walkon">⚡ Sin cola (&lt;15m)</button>
+      <button onclick="setStatusFilter('down')" class="status-chip px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition border" data-stat="down">🛠️ En pausa</button>
+      <button onclick="setStatusFilter('refurb')" class="status-chip px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition border" data-stat="refurb">🚧 Mantenimiento</button>
+      <button onclick="setStatusFilter('closed')" class="status-chip px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition border" data-stat="closed">⛔ Cerradas</button>
+      <button onclick="setStatusFilter('single')" class="status-chip px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition border" data-stat="single">⚡ Single Rider</button>
     </div>
 
     <!-- Buscador y Ordenación -->
     <div class="flex gap-2">
       <div class="relative flex-1">
-        <input type="text" id="searchInput" oninput="actualizarVistas()" placeholder="Buscar por nombre o zona..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-7 py-2 text-xs placeholder-slate-500 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <input type="text" id="searchInput" oninput="actualizarVistas()" placeholder="Buscar por nombre o zona..." class="w-full bg-white border border-slate-300 rounded-xl pl-8 pr-7 py-2 text-xs placeholder-slate-400 text-slate-800 focus:outline-none shadow-sm">
+        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
         </svg>
-        <button onclick="document.getElementById('searchInput').value=''; actualizarVistas()" class="absolute right-2.5 top-2 text-slate-500 hover:text-slate-300 text-xs">✕</button>
+        <button onclick="document.getElementById('searchInput').value=''; actualizarVistas()" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs">✕</button>
       </div>
-      <select id="sortSelect" onchange="renderLista()" class="bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <select id="sortSelect" onchange="renderLista()" class="bg-white border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-semibold focus:outline-none shadow-sm">
         <option value="waitDesc">Más espera</option>
         <option value="waitAsc">Menos espera</option>
         <option value="alpha">A - Z</option>
@@ -158,28 +156,28 @@
     </div>
 
     <!-- Indicador de Carga -->
-    <div id="loadingStatus" class="text-center py-10 text-xs text-slate-400">
-      <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-indigo-500 border-t-transparent mb-2"></div>
+    <div id="loadingStatus" class="text-center py-10 text-xs text-slate-500 font-medium">
+      <div id="loadingSpinner" class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-t-transparent mb-2"></div>
       <div>Sincronizando zonas, coordenadas y atracciones...</div>
     </div>
 
     <!-- CONTENEDOR 1: Vista de Lista y Zonas -->
     <div id="cardsContainer" class="space-y-4"></div>
 
-    <!-- CONTENEDOR 2: Vista de Mapa Interactivo -->
+    <!-- CONTENEDOR 2: Vista de Mapa Interactivo con CARTO Light -->
     <div id="mapWrapper" class="hidden relative">
-      <div id="map" class="w-full h-[65vh] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl z-10"></div>
+      <div id="map" class="w-full h-[65vh] rounded-2xl border border-slate-300 overflow-hidden shadow-lg z-10"></div>
       
       <!-- Botón flotante para GPS -->
-      <button onclick="localizarUsuario()" class="absolute bottom-4 right-4 z-20 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white p-3 rounded-2xl shadow-xl flex items-center justify-center border border-indigo-400/30" title="Centrar en mi ubicación">
-        📍 <span class="ml-1 text-xs font-semibold">Mi posición</span>
+      <button id="gpsBtn" onclick="localizarUsuario()" class="absolute bottom-4 right-4 z-20 text-white p-3 rounded-2xl shadow-xl flex items-center justify-center border-2 transition active:scale-95" title="Centrar en mi ubicación">
+        📍 <span class="ml-1 text-xs font-bold">Mi posición</span>
       </button>
     </div>
 
     <!-- Pie de página con atribución -->
     <footer class="pt-6 pb-2 text-center text-xs text-slate-500 space-y-1">
       <p>
-        <a href="https://themeparks.wiki" target="_blank" class="underline hover:text-slate-400">
+        <a href="https://themeparks.wiki" target="_blank" class="underline hover:text-slate-800 font-medium">
           Powered by ThemeParks.wiki
         </a>
       </p>
@@ -187,6 +185,173 @@
   </main>
 
   <script>
+    // DEFINICIÓN DE TEMAS POR PARQUE
+    const THEMES = {
+      // 1. Disneyland Park Paris (Mickey Fantasía: Blanco, Rojo Escarlata, Azul Marino)
+      'dae968d5-630d-4719-8b06-3d107e944401': {
+        title: 'WaitTimes Fantasía',
+        icon: '🪄',
+        bodyBg: '#f8fafc',
+        primary: '#dc2626',      // Rojo escarlata
+        primaryText: '#ffffff',
+        secondary: '#172554',    // Azul marino Fantasía
+        secondaryText: '#ffffff',
+        accentBar: '#dc2626',
+        titleColor: '#172554',
+        landColor: 'text-blue-950',
+        bannerBg: '#dc2626',
+        gpsBorder: '#dc2626',
+        gpsBg: '#172554',
+        spinnerColor: '#dc2626'
+      },
+      // 2. Disney Adventure World (Frozen: Blanco escarcha, Azul hielo, Fiordo nórdico)
+      'ca888437-ebb4-4d50-aed2-d227f7096968': {
+        title: 'WaitTimes Frozen World',
+        icon: '❄️',
+        bodyBg: '#f0f9ff',
+        primary: '#0284c7',      // Azul cian glaciar
+        primaryText: '#ffffff',
+        secondary: '#0c4a6e',    // Azul fiordo nórdico
+        secondaryText: '#ffffff',
+        accentBar: 'linear-gradient(90deg, #38bdf8, #0284c7, #818cf8)',
+        titleColor: '#0c4a6e',
+        landColor: 'text-sky-900',
+        bannerBg: '#0284c7',
+        gpsBorder: '#38bdf8',
+        gpsBg: '#0c4a6e',
+        spinnerColor: '#0284c7'
+      },
+      // 3. Parque Warner Madrid (Batman / Gotham City Escape: Blanco ceniza, Oro murciélago, Negro)
+      '5adbd2f7-3694-4d23-aaec-4037a056573f': {
+        title: 'WaitTimes Gotham Escape',
+        icon: '🦇',
+        bodyBg: '#f8fafc',
+        primary: '#eab308',      // Amarillo/oro Batman
+        primaryText: '#000000',  // Contraste óptimo
+        secondary: '#0f172a',    // Negro grafito Batman
+        secondaryText: '#ffffff',
+        accentBar: 'linear-gradient(90deg, #eab308, #0f172a, #eab308)',
+        titleColor: '#0f172a',
+        landColor: 'text-amber-900',
+        bannerBg: '#0f172a',
+        gpsBorder: '#eab308',
+        gpsBg: '#0f172a',
+        spinnerColor: '#eab308'
+      },
+      // 4. Parque de Atracciones de Madrid (Arcoíris: Multicolor alegre, Violeta festivo, Índigo)
+      '1ea86991-e2c2-4771-8a32-c6e14c8298a9': {
+        title: 'WaitTimes PAM Arcoíris',
+        icon: '🌈',
+        bodyBg: '#ffffff',
+        primary: '#7c3aed',      // Violeta festivo
+        primaryText: '#ffffff',
+        secondary: '#1e1b4b',    // Índigo profundo
+        secondaryText: '#ffffff',
+        accentBar: 'linear-gradient(90deg, #ef4444, #f97316, #eab308, #10b981, #06b6d4, #6366f1, #d946ef)',
+        titleColor: '#1e1b4b',
+        landColor: 'text-purple-950',
+        bannerBg: 'linear-gradient(90deg, #ef4444, #f97316, #10b981, #6366f1)',
+        gpsBorder: '#ec4899',
+        gpsBg: '#1e1b4b',
+        spinnerColor: '#7c3aed'
+      }
+    };
+
+    function getTemaActual() {
+      const parkId = document.getElementById('parkSelect').value;
+      return THEMES[parkId] || THEMES['dae968d5-630d-4719-8b06-3d107e944401'];
+    }
+
+    function aplicarTema() {
+      const theme = getTemaActual();
+
+      // Fondo general
+      document.body.style.backgroundColor = theme.bodyBg;
+
+      // Cabecera e icono
+      document.getElementById('headerIcon').textContent = theme.icon;
+      document.getElementById('headerTitle').textContent = theme.title;
+      document.getElementById('headerTitle').style.color = theme.titleColor;
+      document.getElementById('headerAccentBar').style.background = theme.accentBar;
+
+      // Botón refrescar
+      const refBtn = document.getElementById('refreshBtn');
+      refBtn.style.backgroundColor = theme.primary;
+      refBtn.style.color = theme.primaryText;
+
+      // Spinner de carga
+      document.getElementById('loadingSpinner').style.borderColor = theme.spinnerColor;
+      document.getElementById('loadingSpinner').style.borderTopColor = 'transparent';
+
+      // Horario título color
+      document.getElementById('scheduleTextWrapper').style.color = theme.titleColor;
+
+      // Botón GPS flotante
+      const gpsBtn = document.getElementById('gpsBtn');
+      if (gpsBtn) {
+        gpsBtn.style.backgroundColor = theme.gpsBg;
+        gpsBtn.style.borderColor = theme.gpsBorder;
+      }
+
+      // Banner reaperturas
+      const reBanner = document.getElementById('reopeningBanner');
+      if (reBanner) {
+        reBanner.style.background = theme.bannerBg;
+      }
+
+      actualizarEstilosChips();
+    }
+
+    function actualizarEstilosChips() {
+      const theme = getTemaActual();
+
+      // Categorías
+      document.querySelectorAll('.cat-chip').forEach(btn => {
+        const isActivo = btn.dataset.cat === catFiltro;
+        if (isActivo) {
+          btn.style.backgroundColor = theme.primary;
+          btn.style.color = theme.primaryText;
+          btn.style.borderColor = theme.primary;
+          btn.className = 'cat-chip px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition shadow-sm border';
+        } else {
+          btn.style.backgroundColor = '#ffffff';
+          btn.style.color = theme.secondary;
+          btn.style.borderColor = '#cbd5e1';
+          btn.className = 'cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border hover:bg-slate-50';
+        }
+      });
+
+      // Estados
+      document.querySelectorAll('.status-chip').forEach(btn => {
+        const isActivo = btn.dataset.stat === statusFiltro;
+        if (isActivo) {
+          btn.style.backgroundColor = theme.secondary;
+          btn.style.color = theme.secondaryText;
+          btn.style.borderColor = theme.secondary;
+          btn.className = 'status-chip px-2.5 py-1 rounded-lg font-bold whitespace-nowrap transition shadow-sm border';
+        } else {
+          btn.style.backgroundColor = '#ffffff';
+          btn.style.color = '#334155';
+          btn.style.borderColor = '#cbd5e1';
+          btn.className = 'status-chip px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition border hover:bg-slate-50';
+        }
+      });
+
+      // Vistas (Lista / Zonas / Mapa)
+      const btnList = document.getElementById('btnViewList');
+      const btnZones = document.getElementById('btnViewZones');
+      const btnMap = document.getElementById('btnViewMap');
+
+      [btnList, btnZones, btnMap].forEach(btn => {
+        btn.style.backgroundColor = 'transparent';
+        btn.style.color = '#475569';
+      });
+
+      const activeBtn = viewMode === 'list' ? btnList : (viewMode === 'zones' ? btnZones : btnMap);
+      activeBtn.style.backgroundColor = theme.secondary;
+      activeBtn.style.color = theme.secondaryText;
+    }
+
     let entidades = [];
     let landMap = {};
     let coordsMap = {};
@@ -195,19 +360,20 @@
     let viewMode = 'zones';
     let autoRefreshTimer = null;
 
-    // Coordenadas centrales por defecto para cada parque
+    // API Key de CARTO
+    const CARTO_API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJhIjoiYWNfMHM5eTAxeWYiLCJqdGkiOiIwMjlmMzlhMDFjMGYzMzQ0ZmUyZThhZWQwMjE3OWQ1NiJ9.hfeha3ji22Wx8h378_GRJIS2xb5lo9Ky-WTMsN2rySE';
+
     const PARK_CENTERS = {
-      '5adbd2f7-3694-4d23-aaec-4037a056573f': { lat: 40.2295, lng: -3.5938, zoom: 16 }, // Parque Warner
-      '1ea86991-e2c2-4771-8a32-c6e14c8298a9': { lat: 40.4124, lng: -3.7505, zoom: 16 }, // Parque Atracciones Madrid
       'dae968d5-630d-4719-8b06-3d107e944401': { lat: 48.8722, lng: 2.7758, zoom: 16 },  // Disneyland Park Paris
-      'ca888437-ebb4-4d50-aed2-d227f7096968': { lat: 48.8683, lng: 2.7806, zoom: 16 }   // Disney Adventure World
+      'ca888437-ebb4-4d50-aed2-d227f7096968': { lat: 48.8683, lng: 2.7806, zoom: 16 },  // Disney Adventure World
+      '5adbd2f7-3694-4d23-aaec-4037a056573f': { lat: 40.2295, lng: -3.5938, zoom: 16 }, // Parque Warner
+      '1ea86991-e2c2-4771-8a32-c6e14c8298a9': { lat: 40.4124, lng: -3.7505, zoom: 16 }  // Parque Atracciones Madrid
     };
 
     let map = null;
     let markersLayer = null;
     let userMarker = null;
 
-    // Historial para tendencias y reaperturas
     let prevStatus = {};
     let prevWaitTimes = {};
 
@@ -239,20 +405,19 @@
       document.getElementById('countRidden').textContent = getRiddenToday().length;
     }
 
-    // Inicializar mapa de Leaflet con OpenStreetMap
     function initMap() {
       if (map) return;
       const parkId = document.getElementById('parkSelect').value;
-      const initial = PARK_CENTERS[parkId] || { lat: 40.2295, lng: -3.5938, zoom: 16 };
+      const initial = PARK_CENTERS[parkId] || { lat: 48.8722, lng: 2.7758, zoom: 16 };
 
       map = L.map('map', {
         zoomControl: false,
         attributionControl: false
       }).setView([initial.lat, initial.lng], initial.zoom);
 
-      // OpenStreetMap gratuito sin API Key
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
+      L.tileLayer(`https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png?key=${CARTO_API_KEY}`, {
+        maxZoom: 19,
+        subdomains: 'abcd'
       }).addTo(map);
 
       L.control.zoom({ position: 'bottomleft' }).addTo(map);
@@ -261,28 +426,14 @@
 
     function setViewMode(mode) {
       viewMode = mode;
-      const btnList = document.getElementById('btnViewList');
-      const btnZones = document.getElementById('btnViewZones');
-      const btnMap = document.getElementById('btnViewMap');
       const cardsContainer = document.getElementById('cardsContainer');
       const mapWrapper = document.getElementById('mapWrapper');
 
-      [btnList, btnZones, btnMap].forEach(b => {
-        b.className = 'px-2 py-1 rounded-lg font-medium transition text-slate-400';
-      });
-
-      if (mode === 'list') {
-        btnList.className = 'px-2 py-1 rounded-lg font-medium transition bg-indigo-600 text-white shadow';
-        cardsContainer.classList.remove('hidden');
-        mapWrapper.classList.add('hidden');
-        renderLista();
-      } else if (mode === 'zones') {
-        btnZones.className = 'px-2 py-1 rounded-lg font-medium transition bg-indigo-600 text-white shadow';
+      if (mode === 'list' || mode === 'zones') {
         cardsContainer.classList.remove('hidden');
         mapWrapper.classList.add('hidden');
         renderLista();
       } else if (mode === 'map') {
-        btnMap.className = 'px-2 py-1 rounded-lg font-medium transition bg-indigo-600 text-white shadow';
         cardsContainer.classList.add('hidden');
         mapWrapper.classList.remove('hidden');
         initMap();
@@ -291,6 +442,7 @@
           renderMapa();
         }, 150);
       }
+      actualizarEstilosChips();
     }
 
     function irAlMapa(itemId) {
@@ -322,10 +474,11 @@
 
         if (userMarker) map.removeLayer(userMarker);
 
+        const theme = getTemaActual();
         const userIcon = L.divIcon({
           className: 'custom-user-marker',
-          html: `<div class="w-4 h-4 bg-blue-500 border-2 border-white rounded-full shadow-lg animate-ping"></div>
-                 <div class="w-4 h-4 bg-blue-500 border-2 border-white rounded-full shadow-lg -mt-4"></div>`,
+          html: `<div class="w-4 h-4 rounded-full shadow-lg animate-ping" style="background-color: ${theme.primary}"></div>
+                 <div class="w-4 h-4 rounded-full shadow-lg -mt-4 border-2 border-white" style="background-color: ${theme.primary}"></div>`,
           iconSize: [16, 16],
           iconAnchor: [8, 8]
         });
@@ -339,6 +492,7 @@
 
     function cambiarDeParque() {
       const parkId = document.getElementById('parkSelect').value;
+      aplicarTema();
       if (map && PARK_CENTERS[parkId]) {
         const c = PARK_CENTERS[parkId];
         map.setView([c.lat, c.lng], c.zoom);
@@ -377,6 +531,7 @@
       const parkId = document.getElementById('parkSelect').value;
       const loader = document.getElementById('loadingStatus');
 
+      aplicarTema();
       loader.classList.remove('hidden');
       document.getElementById('cardsContainer').innerHTML = '';
       document.getElementById('lastUpdateTxt').textContent = 'Sincronizando...';
@@ -517,21 +672,13 @@
 
     function setCatFilter(cat) {
       catFiltro = cat;
-      document.querySelectorAll('.cat-chip').forEach(btn => {
-        btn.className = btn.dataset.cat === cat
-          ? 'cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-indigo-600 text-white'
-          : 'cat-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800';
-      });
+      actualizarEstilosChips();
       actualizarVistas();
     }
 
     function setStatusFilter(stat) {
       statusFiltro = stat;
-      document.querySelectorAll('.status-chip').forEach(btn => {
-        btn.className = btn.dataset.stat === stat
-          ? 'status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-800 text-slate-100 border border-slate-600'
-          : 'status-chip px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800';
-      });
+      actualizarEstilosChips();
       actualizarVistas();
     }
 
@@ -577,6 +724,7 @@
 
       const items = getElementosFiltrados();
       const favs = getFavoritos();
+      const theme = getTemaActual();
 
       items.forEach(item => {
         const coords = coordsMap[item.id];
@@ -587,29 +735,29 @@
         const wait = item.queue?.STANDBY?.waitTime;
         const status = item.status || 'CLOSED';
 
-        let badgeBg = 'bg-slate-800 text-slate-300 border-slate-700';
+        let badgeBg = 'bg-white text-slate-700 border-slate-300';
         let badgeText = `${icon}`;
 
         if (status === 'OPERATING') {
           if (wait != null) {
             badgeText = `${icon} ${wait}m`;
-            badgeBg = wait > 45 ? 'bg-rose-600 text-white border-rose-400' :
-                      wait > 20 ? 'bg-amber-600 text-white border-amber-400' :
-                      'bg-emerald-600 text-white border-emerald-400';
+            badgeBg = wait > 45 ? 'bg-red-600 text-white border-red-700' :
+                      wait > 20 ? 'bg-amber-500 text-white border-amber-600' :
+                      'bg-emerald-600 text-white border-emerald-700';
           } else {
             badgeText = `${icon}`;
-            badgeBg = 'bg-emerald-600 text-white border-emerald-400';
+            badgeBg = 'bg-emerald-600 text-white border-emerald-700';
           }
         } else if (status === 'DOWN') {
           badgeText = `🛠️ Pausa`;
-          badgeBg = 'bg-amber-600 text-white border-amber-400';
+          badgeBg = 'bg-amber-600 text-white border-amber-700';
         } else {
           badgeText = `${icon}`;
-          badgeBg = 'bg-slate-800 text-slate-400 border-slate-700 opacity-70';
+          badgeBg = 'bg-slate-200 text-slate-500 border-slate-300 opacity-80';
         }
 
         const markerHtml = `
-          <div class="px-2 py-1 rounded-full text-[10px] font-bold shadow-lg border flex items-center gap-1 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap cursor-pointer transition transform hover:scale-125 ${badgeBg}">
+          <div class="px-2 py-1 rounded-full text-[10px] font-extrabold shadow-md border flex items-center gap-1 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap cursor-pointer transition transform hover:scale-125 ${badgeBg}">
             ${badgeText}
           </div>
         `;
@@ -625,19 +773,19 @@
 
         const land = landMap[item.id];
         const popupContent = `
-          <div class="text-xs p-1 min-w-[170px] space-y-1.5">
-            <div class="font-bold text-slate-100 flex items-center justify-between gap-2">
+          <div class="text-xs p-1.5 min-w-[170px] space-y-1.5">
+            <div class="font-extrabold flex items-center justify-between gap-2" style="color: ${theme.titleColor}">
               <span>${item.name}</span>
               <button onclick="toggleFavorito('${item.id}', event)" class="text-sm">${favs.includes(item.id) ? '⭐' : '☆'}</button>
             </div>
-            ${land ? `<p class="text-[10px] text-indigo-400 font-medium">${land}</p>` : ''}
-            <div class="flex items-center justify-between pt-1 border-t border-slate-800 text-[11px]">
-              <span class="text-slate-400">Estado:</span>
-              <span class="font-semibold ${status === 'OPERATING' ? 'text-emerald-400' : 'text-slate-400'}">
+            ${land ? `<p class="text-[10px] font-bold" style="color: ${theme.primary}">${land}</p>` : ''}
+            <div class="flex items-center justify-between pt-1 border-t border-slate-200 text-[11px]">
+              <span class="text-slate-500">Estado:</span>
+              <span class="font-bold ${status === 'OPERATING' ? 'text-emerald-700' : 'text-slate-500'}">
                 ${status === 'OPERATING' ? (wait != null ? `${wait} min` : 'Abierto') : (status === 'DOWN' ? 'En pausa' : 'Cerrado')}
               </span>
             </div>
-            ${item.queue?.SINGLE_RIDER?.waitTime != null ? `<div class="text-[10px] text-indigo-300">⚡ Single: ${item.queue.SINGLE_RIDER.waitTime}m</div>` : ''}
+            ${item.queue?.SINGLE_RIDER?.waitTime != null ? `<div class="text-[10px] font-bold" style="color: ${theme.secondary}">⚡ Single: ${item.queue.SINGLE_RIDER.waitTime}m</div>` : ''}
           </div>
         `;
 
@@ -651,6 +799,7 @@
       const sortType = document.getElementById('sortSelect').value;
       const favs = getFavoritos();
       const ridden = getRiddenToday();
+      const theme = getTemaActual();
 
       container.innerHTML = '';
       let filtradas = getElementosFiltrados();
@@ -671,7 +820,7 @@
       });
 
       if (filtradas.length === 0) {
-        container.innerHTML = '<div class="text-center py-10 text-xs text-slate-500">No se encontraron elementos con los filtros seleccionados.</div>';
+        container.innerHTML = '<div class="text-center py-10 text-xs text-slate-500 font-medium">No se encontraron elementos con los filtros seleccionados.</div>';
         return;
       }
 
@@ -688,7 +837,8 @@
           sec.className = 'space-y-2';
 
           const header = document.createElement('div');
-          header.className = 'flex items-center justify-between pt-2 pb-1 border-b border-slate-800 text-xs font-semibold text-indigo-300';
+          header.className = 'flex items-center justify-between pt-2 pb-1 border-b border-slate-300 text-xs font-bold';
+          header.style.color = theme.titleColor;
           header.innerHTML = `
             <span class="flex items-center gap-1.5">📍 ${zona}</span>
             <span class="text-[10px] text-slate-500 font-normal">${zonas[zona].length}</span>
@@ -708,6 +858,7 @@
     }
 
     function crearCard(item, favs, ridden) {
+      const theme = getTemaActual();
       const cat = getCategory(item);
       const icon = getAttractionIcon(item, cat);
       const isFav = favs.includes(item.id);
@@ -722,54 +873,54 @@
       let trendHtml = '';
       if (prevWaitTimes[item.id] != null && wait != null) {
         const diff = wait - prevWaitTimes[item.id];
-        if (diff > 0) trendHtml = `<span class="text-[10px] text-rose-400 font-bold block">↑ +${diff}m</span>`;
-        else if (diff < 0) trendHtml = `<span class="text-[10px] text-emerald-400 font-bold block">↓ ${diff}m</span>`;
+        if (diff > 0) trendHtml = `<span class="text-[10px] text-red-600 font-bold block">↑ +${diff}m</span>`;
+        else if (diff < 0) trendHtml = `<span class="text-[10px] text-emerald-600 font-bold block">↓ ${diff}m</span>`;
       }
 
       let badgeHtml = '';
       if (status === 'OPERATING') {
         if (wait != null) {
-          const colorClass = wait > 45 ? 'bg-rose-500/15 text-rose-300 border-rose-500/30' :
-                             wait > 20 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' :
-                             'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+          const colorClass = wait > 45 ? 'bg-red-50 text-red-700 border-red-300' :
+                             wait > 20 ? 'bg-amber-50 text-amber-800 border-amber-300' :
+                             'bg-emerald-50 text-emerald-800 border-emerald-300';
           badgeHtml = `
-            <div class="text-right">
-              <span class="text-base font-bold px-2.5 py-1 rounded-xl border ${colorClass} inline-block">${wait} min</span>
+            <div class="text-right shrink-0">
+              <span class="text-base font-extrabold px-2.5 py-1 rounded-xl border ${colorClass} inline-block whitespace-nowrap shadow-sm">${wait} min</span>
               ${trendHtml}
             </div>`;
         } else {
-          badgeHtml = `<span class="text-xs px-2.5 py-1 rounded-xl bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">Abierto</span>`;
+          badgeHtml = `<span class="text-xs px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold whitespace-nowrap shrink-0">Abierto</span>`;
         }
       } else if (status === 'DOWN') {
-        badgeHtml = `<span class="text-xs px-2 py-0.5 rounded-lg bg-amber-950/60 text-amber-300 border border-amber-800/50">En pausa</span>`;
+        badgeHtml = `<span class="text-xs px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 font-bold whitespace-nowrap shrink-0">En pausa</span>`;
       } else if (status === 'REFURBISHMENT') {
-        badgeHtml = `<span class="text-xs px-2 py-0.5 rounded-lg bg-blue-950/60 text-blue-300 border border-blue-800/50">Mantenimiento</span>`;
+        badgeHtml = `<span class="text-xs px-2 py-0.5 rounded-lg bg-blue-50 text-blue-900 border border-blue-300 font-bold whitespace-nowrap shrink-0">Mantenimiento</span>`;
       } else {
-        badgeHtml = `<span class="text-xs px-2 py-0.5 rounded-lg bg-slate-900 text-slate-500 border border-slate-800">Cerrado</span>`;
+        badgeHtml = `<span class="text-xs px-2 py-0.5 rounded-lg bg-slate-100 text-slate-500 border border-slate-300 font-medium whitespace-nowrap shrink-0">Cerrado</span>`;
       }
 
       const pills = [];
       if (singleWait != null) {
-        pills.push(`<span class="inline-flex items-center text-[10px] bg-indigo-950/60 text-indigo-300 border border-indigo-800/40 px-2 py-0.5 rounded-md">⚡ Single: <b>${singleWait}m</b></span>`);
+        pills.push(`<span class="inline-flex items-center text-[10px] bg-slate-100 border border-slate-300 px-2 py-0.5 rounded-md font-bold whitespace-nowrap" style="color: ${theme.titleColor}">⚡ Single: <b>${singleWait}m</b></span>`);
       }
       if (paidReturn && paidReturn.returnStart) {
         const horaIni = formatHora(paidReturn.returnStart);
         const horaFin = paidReturn.returnEnd ? formatHora(paidReturn.returnEnd) : '';
         const precio = paidReturn.price?.formatted ? ` • ${paidReturn.price.formatted}` : '';
-        pills.push(`<span class="inline-flex items-center text-[10px] bg-purple-950/60 text-purple-300 border border-purple-800/40 px-2 py-0.5 rounded-md">🎟️ Pase: ${horaIni}-${horaFin}${precio}</span>`);
+        pills.push(`<span class="inline-flex items-center text-[10px] bg-slate-100 border border-slate-300 px-2 py-0.5 rounded-md font-bold whitespace-nowrap" style="color: ${theme.titleColor}">🎟️ Pase: ${horaIni}-${horaFin}${precio}</span>`);
       }
 
       if (item.showtimes && item.showtimes.length > 0) {
         const prox = calcularProximoShow(item.showtimes);
         if (prox) {
-          pills.push(`<span class="text-[10px] text-amber-300 bg-amber-950/50 border border-amber-900/50 px-2 py-0.5 rounded-md font-medium">🎭 Próximo: ${prox.hora} (${prox.countdown})</span>`);
+          pills.push(`<span class="text-[10px] bg-amber-50 border border-amber-300 text-amber-900 px-2 py-0.5 rounded-md font-bold whitespace-nowrap">🎭 Próximo: ${prox.hora} (${prox.countdown})</span>`);
         } else {
           const listHoras = item.showtimes.slice(0, 3).map(st => formatHora(st.startTime)).join(', ');
-          pills.push(`<span class="text-[10px] text-amber-300/80 bg-amber-950/30 border border-amber-900/30 px-2 py-0.5 rounded-md">Pases: ${listHoras}</span>`);
+          pills.push(`<span class="text-[10px] bg-amber-50 border border-amber-200 text-amber-800 px-2 py-0.5 rounded-md whitespace-nowrap">Pases: ${listHoras}</span>`);
         }
       }
 
-      const extraInfoHtml = pills.length > 0 ? `<div class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-slate-800/60">${pills.join('')}</div>` : '';
+      const extraInfoHtml = pills.length > 0 ? `<div class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-slate-100">${pills.join('')}</div>` : '';
 
       const labelsCat = {
         attractions: 'Atracción',
@@ -780,34 +931,34 @@
       };
 
       const card = document.createElement('div');
-      card.className = `bg-slate-900/80 border ${isFav ? 'border-amber-500/40 bg-amber-950/10' : 'border-slate-800/70'} p-3 rounded-2xl shadow-sm transition ${isRidden ? 'opacity-40' : ''}`;
+      card.className = `bg-white border ${isFav ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'} p-3.5 rounded-2xl shadow-sm hover:shadow transition ${isRidden ? 'opacity-40' : ''}`;
       
       card.innerHTML = `
         <div class="flex items-start justify-between gap-3">
-          <div class="flex items-start gap-2.5 min-w-0">
-            <button onclick="toggleFavorito('${item.id}', event)" class="text-base mt-0.5 active:scale-125 focus:outline-none" title="Favorito">
+          <div class="flex items-start gap-2.5 min-w-0 flex-1">
+            <button onclick="toggleFavorito('${item.id}', event)" class="text-base mt-0.5 active:scale-125 focus:outline-none shrink-0" title="Favorito">
               ${isFav ? '⭐' : '☆'}
             </button>
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5">
-                <span class="text-xs">${icon}</span>
-                <h3 class="font-medium text-sm text-slate-100 leading-snug line-clamp-2 ${isRidden ? 'line-through text-slate-400' : ''}">${item.name}</h3>
+                <span class="text-xs shrink-0">${icon}</span>
+                <h3 class="font-bold text-sm leading-snug line-clamp-2 ${isRidden ? 'line-through text-slate-400' : ''}" style="color: ${isRidden ? '#94a3b8' : theme.titleColor}">${item.name}</h3>
               </div>
               <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="text-[10px] text-slate-500 uppercase tracking-wider">${labelsCat[cat]}</span>
-                ${land ? `<span class="text-[10px] text-indigo-400/80 truncate">• ${land}</span>` : ''}
+                <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider whitespace-nowrap">${labelsCat[cat]}</span>
+                ${land ? `<span class="text-[10px] font-bold truncate ${theme.landColor}">• ${land}</span>` : ''}
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 shrink-0">
             ${badgeHtml}
             ${hasCoords ? `
-              <button onclick="irAlMapa('${item.id}')" class="text-xs p-1 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white" title="Ver en el mapa">
+              <button onclick="irAlMapa('${item.id}')" class="text-xs p-1.5 rounded-lg border border-slate-300 bg-slate-50 hover:bg-slate-100 transition shrink-0" style="color: ${theme.titleColor}" title="Ver en el mapa">
                 📍
               </button>
             ` : ''}
             ${cat === 'attractions' ? `
-              <button onclick="toggleRidden('${item.id}', event)" class="text-xs p-1 rounded-lg border ${isRidden ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-400' : 'border-slate-800 text-slate-600 hover:text-slate-400'}" title="Marcar como montada">
+              <button onclick="toggleRidden('${item.id}', event)" class="text-xs p-1.5 rounded-lg border ${isRidden ? 'bg-emerald-600 border-emerald-600 text-white font-bold' : 'border-slate-300 text-slate-400 hover:text-slate-800'} shrink-0" title="Marcar como montada">
                 ✓
               </button>
             ` : ''}
@@ -852,7 +1003,8 @@
       }
     }
 
-    // Inicio automático
+    // Arranque inicial con tema
+    aplicarTema();
     cargarTodo();
   </script>
 </body>
