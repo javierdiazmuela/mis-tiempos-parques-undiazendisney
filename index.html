@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Un Díaz en Disney - Tiempos & Zonas</title>
+  <title>Un Díaz en Disney - Tiempos en Vivo</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Estilos y scripts de Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -31,7 +31,16 @@
     }
   </style>
 </head>
-<body id="pageBody" class="bg-slate-100 text-slate-800 min-h-screen pb-16 antialiased transition-colors duration-300">
+<body id="pageBody" class="bg-slate-100 text-slate-800 min-h-screen pb-20 antialiased transition-colors duration-300">
+
+  <!-- Toast flotante de notificación -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-2xl transition-all border border-slate-700"></div>
+
+  <!-- Banner de aviso offline -->
+  <div id="offlineBanner" class="hidden bg-amber-500 text-slate-950 px-4 py-2 text-xs font-bold flex items-center justify-between sticky top-0 z-50 shadow-md">
+    <span id="offlineBannerText">📶 Modo sin conexión</span>
+    <button onclick="document.getElementById('offlineBanner').classList.add('hidden')" class="font-black text-sm">✕</button>
+  </div>
 
   <!-- Banner de reaperturas instantáneas ("Caza-Colas") -->
   <div id="reopeningBanner" class="hidden text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between sticky top-0 z-50 shadow-xl animate-pulse">
@@ -47,7 +56,7 @@
   <!-- ======================================================== -->
   <div class="w-full bg-white border-b border-slate-200/80 pt-6 pb-5 px-4 shadow-sm">
     <div class="max-w-md mx-auto flex flex-col items-center justify-center text-center space-y-3">
-      <!-- Icono / Avatar con anillo de color dinámico según el parque -->
+      <!-- Icono / Avatar con anillo dinámico según parque -->
       <div class="relative">
         <img id="profileImg" src="avatar.jpg" alt="Un Díaz en Disney" 
              class="w-24 h-24 rounded-full object-cover shadow-lg border-2 border-white ring-4 transition-all duration-300"
@@ -76,13 +85,14 @@
     </div>
   </div>
 
-  <!-- Barra de navegación fija / controles -->
+  <!-- Barra de navegación fija / cabecera temática -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-4 pt-3 pb-2.5 shadow-sm">
     <div class="max-w-md mx-auto flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <span id="headerIcon" class="text-xl transition-transform duration-300">🪄</span>
         <div>
-          <h1 id="headerTitle" class="text-sm font-extrabold tracking-tight transition-colors duration-300">WaitTimes</h1>
+          <!-- Texto dinámico: Tiempos [Nombre del parque] -->
+          <h1 id="headerTitle" class="text-sm font-extrabold tracking-tight transition-colors duration-300">Tiempos</h1>
           <p id="lastUpdateTxt" class="text-[10px] text-slate-500 font-medium">Iniciando...</p>
         </div>
       </div>
@@ -107,22 +117,35 @@
 
   <main class="max-w-md mx-auto px-4 pt-3 space-y-3">
 
-    <!-- Selector de Parque -->
+    <!-- Selector de Parque agrupado por Regiones con IDs actualizados -->
     <div>
       <select id="parkSelect" onchange="cambiarDeParque()" class="w-full bg-white border border-slate-300 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none shadow-sm">
-        <option value="dae968d5-630d-4719-8b06-3d107e944401">Disneyland Park (París)</option>
-        <option value="ca888437-ebb4-4d50-aed2-d227f7096968">Disney Adventure World (París)</option>
-        <option value="5adbd2f7-3694-4d23-aaec-4037a056573f">Parque Warner Madrid</option>
-        <option value="1ea86991-e2c2-4771-8a32-c6e14c8298a9">Parque de Atracciones de Madrid</option>
+        <optgroup label="🇪🇸 España">
+          <option value="5adbd2f7-3694-4d23-aaec-4037a056573f">Parque Warner Madrid</option>
+          <option value="1ea86991-e2c2-4771-8a32-c6e14c8298a9">Parque de Atracciones de Madrid</option>
+        </optgroup>
+        <optgroup label="🇫🇷 París">
+          <option value="dae968d5-630d-4719-8b06-3d107e944401" selected>Disneyland Park (París)</option>
+          <option value="ca888437-ebb4-4d50-aed2-d227f7096968">Disney Adventure World (París)</option>
+        </optgroup>
+        <optgroup label="🇺🇸 Orlando (EE. UU.)">
+          <option value="12dbb85b-265f-44e6-bccf-f1faa17211fc">Universal Epic Universe</option>
+          <option value="267615cc-8943-4c2a-ae2c-5da728ca591f">Universal Islands of Adventure</option>
+          <option value="eb3f4560-2383-4a36-9152-6b3e5ed6bc57">Universal Studios Florida</option>
+          <option value="75ea578a-adc8-4116-a54d-dccb60765ef9">Magic Kingdom Park</option>
+          <option value="47f90d2c-e191-4239-a466-5892ef59a88b">EPCOT</option>
+          <option value="288747d1-8b4f-4a64-867e-ea7c9b27bad8">Disney's Hollywood Studios</option>
+          <option value="1c84a229-8862-4648-9c71-378ddd2c7693">Disney's Animal Kingdom Theme Park</option>
+        </optgroup>
       </select>
     </div>
 
-    <!-- Panel de Horario y Resumen de Estado -->
+    <!-- TARJETA: Horario, Meteorología en vivo y Puesta de Sol -->
     <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-2.5">
       <div class="flex items-center justify-between text-xs">
         <div class="flex items-center gap-1.5 font-bold" id="scheduleTextWrapper">
           <span>🕒</span>
-          <span id="scheduleText">Cargando horario oficial...</span>
+          <span id="scheduleText">Cargando horario...</span>
         </div>
         <label class="flex items-center gap-1 text-[11px] font-medium text-slate-500 cursor-pointer">
           <input type="checkbox" id="autoRefreshCheck" onchange="toggleAutoRefresh()" class="rounded border-slate-300 focus:ring-0">
@@ -130,8 +153,15 @@
         </label>
       </div>
 
+      <!-- Fila meteorológica Open-Meteo -->
+      <div id="weatherRow" class="flex items-center justify-between text-[11px] bg-slate-50 border border-slate-200/80 rounded-xl px-2.5 py-1.5 font-medium text-slate-600">
+        <span id="weatherTemp">🌤️ Consultando tiempo...</span>
+        <span id="weatherRain">☔ Lluvia: --%</span>
+        <span id="weatherSunset">🌅 Puesta: --:--</span>
+      </div>
+
       <!-- Métricas del parque -->
-      <div class="grid grid-cols-4 gap-1.5 pt-1 border-t border-slate-100 text-center text-[10px]">
+      <div class="grid grid-cols-4 gap-1.5 pt-0.5 text-center text-[10px]">
         <div class="bg-emerald-50 border border-emerald-200 rounded-xl py-1 px-1">
           <span class="text-emerald-700 font-extrabold text-sm block" id="countOpen">0</span>
           <span class="text-emerald-900 font-medium">Abiertas</span>
@@ -151,11 +181,31 @@
       </div>
     </div>
 
-    <!-- Fila 1: Filtro de Categorías -->
+    <!-- BOTONES TÁCTICOS Y DE REDES SOCIALES -->
+    <div class="grid grid-cols-3 gap-2 text-xs">
+      <!-- 1. Recomendador inteligente -->
+      <button onclick="recomendarAtraccion()" class="bg-white border border-slate-300 hover:border-slate-400 p-2.5 rounded-2xl font-bold text-slate-800 flex flex-col items-center justify-center text-center shadow-sm active:scale-95 transition">
+        <span class="text-base mb-0.5">🎯</span>
+        <span class="text-[11px]">¿A cuál voy?</span>
+      </button>
+      <!-- 2. Copiar reporte para WhatsApp -->
+      <button onclick="copiarReporte()" class="bg-white border border-slate-300 hover:border-slate-400 p-2.5 rounded-2xl font-bold text-slate-800 flex flex-col items-center justify-center text-center shadow-sm active:scale-95 transition">
+        <span class="text-base mb-0.5">📲</span>
+        <span class="text-[11px]">Copiar reporte</span>
+      </button>
+      <!-- 3. Modal Top 5 para Story -->
+      <button onclick="abrirModalStory()" class="bg-white border border-slate-300 hover:border-slate-400 p-2.5 rounded-2xl font-bold text-slate-800 flex flex-col items-center justify-center text-center shadow-sm active:scale-95 transition">
+        <span class="text-base mb-0.5">📸</span>
+        <span class="text-[11px]">Modo Story</span>
+      </button>
+    </div>
+
+    <!-- Fila 1: Filtro de Categorías con subfiltro Coasters -->
     <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-xs">
       <button onclick="setCatFilter('all')" class="cat-chip px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition shadow-sm border" data-cat="all">Todos</button>
       <button onclick="setCatFilter('favs')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="favs">⭐ Favoritos</button>
-      <button onclick="setCatFilter('attractions')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="attractions">🎢 Atracciones</button>
+      <button onclick="setCatFilter('coasters')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="coasters">🎢 Coasters</button>
+      <button onclick="setCatFilter('attractions')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="attractions">🎡 Atracciones</button>
       <button onclick="setCatFilter('shows')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="shows">🎭 Shows</button>
       <button onclick="setCatFilter('characters')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="characters">📸 Personajes</button>
       <button onclick="setCatFilter('dining')" class="cat-chip px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition border" data-cat="dining">🍔 Restaurantes</button>
@@ -201,8 +251,6 @@
     <!-- CONTENEDOR 2: Vista de Mapa Interactivo con OpenStreetMap -->
     <div id="mapWrapper" class="hidden relative">
       <div id="map" class="w-full h-[65vh] rounded-2xl border border-slate-300 overflow-hidden shadow-lg z-10"></div>
-      
-      <!-- Botón flotante para GPS -->
       <button id="gpsBtn" onclick="localizarUsuario()" class="absolute bottom-4 right-4 z-20 text-white p-3 rounded-2xl shadow-xl flex items-center justify-center border-2 transition active:scale-95" title="Centrar en mi ubicación">
         📍 <span class="ml-1 text-xs font-bold">Mi posición</span>
       </button>
@@ -218,17 +266,79 @@
     </footer>
   </main>
 
+  <!-- MODAL: ¿A CUÁL VOY AHORA? -->
+  <div id="recModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 text-center space-y-3">
+      <span class="text-4xl block">🎯</span>
+      <h3 class="text-base font-extrabold text-slate-900">Tu mejor opción ahora mismo:</h3>
+      <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+        <h4 id="recRideName" class="text-sm font-black text-blue-950">---</h4>
+        <div id="recRideBadge" class="text-xs font-extrabold inline-block px-3 py-1 rounded-xl">-- min</div>
+        <p id="recRideReason" class="text-xs text-slate-600 font-medium pt-1">---</p>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button id="recBtnMap" class="flex-1 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition">📍 Ver en mapa</button>
+        <button onclick="cerrarRecModal()" class="flex-1 py-2 text-xs font-bold bg-blue-950 text-white rounded-xl transition">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FICHA TOP 5 PARA INSTAGRAM STORY -->
+  <div id="storyModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="relative max-w-sm w-full">
+      <button onclick="cerrarModalStory()" class="absolute -top-10 right-0 text-white/90 font-black text-lg p-1">✕ Cerrar</button>
+      
+      <div id="storyCard" class="bg-gradient-to-b from-slate-900 via-slate-950 to-black text-white p-6 rounded-3xl shadow-2xl border border-slate-800 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <img src="avatar.jpg" class="w-10 h-10 rounded-full border-2 border-amber-400 object-cover" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=UDED';">
+            <div>
+              <h4 class="text-sm font-black tracking-tight leading-none text-white">Un Díaz en Disney</h4>
+              <p class="text-[10px] text-amber-400 font-bold">@undiazendisney</p>
+            </div>
+          </div>
+          <span id="storyTime" class="text-xs font-extrabold bg-slate-800 px-2.5 py-1 rounded-full text-slate-300">--:--</span>
+        </div>
+
+        <div class="text-center space-y-0.5">
+          <span id="storyParkIcon" class="text-2xl block">🎢</span>
+          <h3 id="storyParkName" class="text-base font-black tracking-tight text-white leading-tight">Parque</h3>
+          <p id="storyWeatherInfo" class="text-[11px] text-slate-400">☀️ 24°C</p>
+        </div>
+
+        <div class="space-y-1.5 pt-1">
+          <div class="text-[10px] uppercase font-black tracking-wider text-rose-400 flex items-center gap-1">
+            <span>🔥</span> Top 5 con más espera
+          </div>
+          <div id="storyTopWait" class="space-y-1 text-xs"></div>
+        </div>
+
+        <div class="space-y-1.5 pt-1">
+          <div class="text-[10px] uppercase font-black tracking-wider text-emerald-400 flex items-center gap-1">
+            <span>⚡</span> Top 5 menos espera (Walk-on)
+          </div>
+          <div id="storyLowWait" class="space-y-1 text-xs"></div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800/80 text-center">
+          <p class="text-[10px] text-slate-400 font-medium">Síguenos para más tiempos y consejos en directo 🎢</p>
+        </div>
+      </div>
+      <p class="text-center text-slate-400 text-xs pt-3">📸 Haz una captura de pantalla para subir a tus Stories</p>
+    </div>
+  </div>
+
   <script>
-    // DEFINICIÓN DE TEMAS POR PARQUE
+    // DEFINICIÓN DE TEMAS POR PARQUE CON TÍTULOS 'Tiempos [Parque]'
     const THEMES = {
-      // 1. Disneyland Park Paris (Mickey Fantasía: Blanco, Rojo Escarlata, Azul Marino)
+      // 1. Disneyland Park Paris
       'dae968d5-630d-4719-8b06-3d107e944401': {
-        title: 'Tiempos Disneyland Park (Paris)',
+        title: 'Tiempos Disneyland Park',
         icon: '🪄',
         bodyBg: '#f8fafc',
-        primary: '#dc2626',      // Rojo escarlata
+        primary: '#dc2626',
         primaryText: '#ffffff',
-        secondary: '#172554',    // Azul marino Fantasía
+        secondary: '#172554',
         secondaryText: '#ffffff',
         accentBar: '#dc2626',
         titleColor: '#172554',
@@ -239,14 +349,14 @@
         spinnerColor: '#dc2626',
         ringColor: '#dc2626'
       },
-      // 2. Disney Adventure World (Frozen: Blanco escarcha, Azul hielo, Fiordo nórdico)
+      // 2. Disney Adventure World Paris
       'ca888437-ebb4-4d50-aed2-d227f7096968': {
-        title: 'Tiempos Disney Adventure World (Paris)',
+        title: 'Tiempos Disney Adventure World',
         icon: '❄️',
         bodyBg: '#f0f9ff',
-        primary: '#0284c7',      // Azul cian glaciar
+        primary: '#0284c7',
         primaryText: '#ffffff',
-        secondary: '#0c4a6e',    // Azul fiordo nórdico
+        secondary: '#0c4a6e',
         secondaryText: '#ffffff',
         accentBar: 'linear-gradient(90deg, #38bdf8, #0284c7, #818cf8)',
         titleColor: '#0c4a6e',
@@ -257,14 +367,14 @@
         spinnerColor: '#0284c7',
         ringColor: '#0284c7'
       },
-      // 3. Parque Warner Madrid (Batman / Gotham City Escape: Blanco ceniza, Oro murciélago, Negro)
+      // 3. Parque Warner Madrid
       '5adbd2f7-3694-4d23-aaec-4037a056573f': {
-        title: 'Tiempos Parque Warner (Madrid)',
+        title: 'Tiempos Parque Warner',
         icon: '🦇',
         bodyBg: '#f8fafc',
-        primary: '#eab308',      // Amarillo/oro Batman
-        primaryText: '#000000',  // Contraste óptimo
-        secondary: '#0f172a',    // Negro grafito Batman
+        primary: '#eab308',
+        primaryText: '#000000',
+        secondary: '#0f172a',
         secondaryText: '#ffffff',
         accentBar: 'linear-gradient(90deg, #eab308, #0f172a, #eab308)',
         titleColor: '#0f172a',
@@ -275,14 +385,14 @@
         spinnerColor: '#eab308',
         ringColor: '#eab308'
       },
-      // 4. Parque de Atracciones de Madrid (Arcoíris: Multicolor alegre, Violeta festivo, Índigo)
+      // 4. Parque de Atracciones de Madrid
       '1ea86991-e2c2-4771-8a32-c6e14c8298a9': {
-        title: 'Tiempos Parque de Atracciones de Madrid (Madrid)',
+        title: 'Tiempos Parque de Atracciones',
         icon: '🌈',
         bodyBg: '#ffffff',
-        primary: '#7c3aed',      // Violeta festivo
+        primary: '#7c3aed',
         primaryText: '#ffffff',
-        secondary: '#1e1b4b',    // Índigo profundo
+        secondary: '#1e1b4b',
         secondaryText: '#ffffff',
         accentBar: 'linear-gradient(90deg, #ef4444, #f97316, #eab308, #10b981, #06b6d4, #6366f1, #d946ef)',
         titleColor: '#1e1b4b',
@@ -292,8 +402,165 @@
         gpsBg: '#1e1b4b',
         spinnerColor: '#7c3aed',
         ringColor: '#7c3aed'
+      },
+      // 5. Universal Epic Universe
+      '12dbb85b-265f-44e6-bccf-f1faa17211fc': {
+        title: 'Tiempos Epic Universe',
+        icon: '🌌',
+        bodyBg: '#f8fafc',
+        primary: '#d97706',
+        primaryText: '#ffffff',
+        secondary: '#1e1b4b',
+        secondaryText: '#ffffff',
+        accentBar: 'linear-gradient(90deg, #d97706, #0284c7, #818cf8)',
+        titleColor: '#1e1b4b',
+        landColor: 'text-indigo-950',
+        bannerBg: '#0284c7',
+        gpsBorder: '#d97706',
+        gpsBg: '#1e1b4b',
+        spinnerColor: '#d97706',
+        ringColor: '#d97706'
+      },
+      // 6. Universal Islands of Adventure
+      '267615cc-8943-4c2a-ae2c-5da728ca591f': {
+        title: 'Tiempos Islands of Adventure',
+        icon: '🦖',
+        bodyBg: '#f0fdf4',
+        primary: '#059669',
+        primaryText: '#ffffff',
+        secondary: '#0f172a',
+        secondaryText: '#ffffff',
+        accentBar: 'linear-gradient(90deg, #059669, #d97706, #0f172a)',
+        titleColor: '#064e3b',
+        landColor: 'text-emerald-950',
+        bannerBg: '#059669',
+        gpsBorder: '#059669',
+        gpsBg: '#0f172a',
+        spinnerColor: '#059669',
+        ringColor: '#059669'
+      },
+      // 7. Universal Studios Florida
+      'eb3f4560-2383-4a36-9152-6b3e5ed6bc57': {
+        title: 'Tiempos Universal Studios',
+        icon: '🎬',
+        bodyBg: '#f8fafc',
+        primary: '#ca8a04',
+        primaryText: '#000000',
+        secondary: '#1e293b',
+        secondaryText: '#ffffff',
+        accentBar: 'linear-gradient(90deg, #ca8a04, #dc2626, #1e293b)',
+        titleColor: '#0f172a',
+        landColor: 'text-slate-900',
+        bannerBg: '#1e293b',
+        gpsBorder: '#ca8a04',
+        gpsBg: '#1e293b',
+        spinnerColor: '#ca8a04',
+        ringColor: '#ca8a04'
+      },
+      // 8. Magic Kingdom Park
+      '75ea578a-adc8-4116-a54d-dccb60765ef9': {
+        title: 'Tiempos Magic Kingdom',
+        icon: '🏰',
+        bodyBg: '#f8fafc',
+        primary: '#2563eb',
+        primaryText: '#ffffff',
+        secondary: '#1e1b4b',
+        secondaryText: '#ffffff',
+        accentBar: 'linear-gradient(90deg, #2563eb, #f59e0b, #ec4899)',
+        titleColor: '#1e1b4b',
+        landColor: 'text-blue-950',
+        bannerBg: '#2563eb',
+        gpsBorder: '#f59e0b',
+        gpsBg: '#1e1b4b',
+        spinnerColor: '#2563eb',
+        ringColor: '#2563eb'
+      },
+      // 9. EPCOT
+      '47f90d2c-e191-4239-a466-5892ef59a88b': {
+        title: 'Tiempos EPCOT',
+        icon: '🌐',
+        bodyBg: '#faf5ff',
+        primary: '#7c3aed',
+        primaryText: '#ffffff',
+        secondary: '#1e1b4b',
+        secondaryText: '#ffffff',
+        accentBar: 'linear-gradient(90deg, #7c3aed, #06b6d4, #ec4899)',
+        titleColor: '#3b0764',
+        landColor: 'text-purple-950',
+        bannerBg: '#7c3aed',
+        gpsBorder: '#06b6d4',
+        gpsBg: '#1e1b4b',
+        spinnerColor: '#7c3aed',
+        ringColor: '#7c3aed'
+      },
+      // 10. Disney's Hollywood Studios
+      '288747d1-8b4f-4a64-867e-ea7c9b27bad8': {
+        title: 'Tiempos Hollywood Studios',
+        icon: '🎥',
+        bodyBg: '#fff1f2',
+        primary: '#be123c',
+        primaryText: '#ffffff',
+        secondary: '#1e293b',
+        secondaryText: '#ffffff',
+        accentBar: 'linear-gradient(90deg, #be123c, #fbbf24, #1e293b)',
+        titleColor: '#881337',
+        landColor: 'text-rose-950',
+        bannerBg: '#be123c',
+        gpsBorder: '#fbbf24',
+        gpsBg: '#1e293b',
+        spinnerColor: '#be123c',
+        ringColor: '#be123c'
+      },
+      // 11. Disney's Animal Kingdom Theme Park
+      '1c84a229-8862-4648-9c71-378ddd2c7693': {
+        title: 'Tiempos Animal Kingdom',
+        icon: '🦁',
+        bodyBg: '#f0fdf4',
+        primary: '#15803d',
+        primaryText: '#ffffff',
+        secondary: '#14532d',
+        secondaryText: '#ffffff',
+        accentBar: 'linear-gradient(90deg, #15803d, #eab308, #14532d)',
+        titleColor: '#14532d',
+        landColor: 'text-emerald-950',
+        bannerBg: '#15803d',
+        gpsBorder: '#eab308',
+        gpsBg: '#14532d',
+        spinnerColor: '#15803d',
+        ringColor: '#15803d'
       }
     };
+
+    // Coordenadas para cada parque
+    const PARK_CENTERS = {
+      'dae968d5-630d-4719-8b06-3d107e944401': { lat: 48.8722, lng: 2.7758, zoom: 16 },
+      'ca888437-ebb4-4d50-aed2-d227f7096968': { lat: 48.8683, lng: 2.7806, zoom: 16 },
+      '5adbd2f7-3694-4d23-aaec-4037a056573f': { lat: 40.2295, lng: -3.5938, zoom: 16 },
+      '1ea86991-e2c2-4771-8a32-c6e14c8298a9': { lat: 40.4124, lng: -3.7505, zoom: 16 },
+      '12dbb85b-265f-44e6-bccf-f1faa17211fc': { lat: 28.4357, lng: -81.4550, zoom: 16 },
+      '267615cc-8943-4c2a-ae2c-5da728ca591f': { lat: 28.4721, lng: -81.4735, zoom: 16 },
+      'eb3f4560-2383-4a36-9152-6b3e5ed6bc57': { lat: 28.4754, lng: -81.4678, zoom: 16 },
+      '75ea578a-adc8-4116-a54d-dccb60765ef9': { lat: 28.4177, lng: -81.5812, zoom: 16 },
+      '47f90d2c-e191-4239-a466-5892ef59a88b': { lat: 28.3747, lng: -81.5494, zoom: 16 },
+      '288747d1-8b4f-4a64-867e-ea7c9b27bad8': { lat: 28.3575, lng: -81.5592, zoom: 16 },
+      '1c84a229-8862-4648-9c71-378ddd2c7693': { lat: 28.3597, lng: -81.5913, zoom: 16 }
+    };
+
+    let entidades = [];
+    let landMap = {};
+    let coordsMap = {};
+    let catFiltro = 'all';
+    let statusFiltro = 'any';
+    let viewMode = 'zones';
+    let autoRefreshTimer = null;
+    let weatherData = null;
+
+    let map = null;
+    let markersLayer = null;
+    let userMarker = null;
+
+    let prevStatus = {};
+    let prevWaitTimes = {};
 
     function getTemaActual() {
       const parkId = document.getElementById('parkSelect').value;
@@ -302,23 +569,16 @@
 
     function aplicarTema() {
       const theme = getTemaActual();
-
       document.body.style.backgroundColor = theme.bodyBg;
-
       document.getElementById('headerIcon').textContent = theme.icon;
       document.getElementById('headerTitle').textContent = theme.title;
       document.getElementById('headerTitle').style.color = theme.titleColor;
       document.getElementById('headerAccentBar').style.background = theme.accentBar;
 
-      // Anillo y nombre de perfil
       const profileImg = document.getElementById('profileImg');
-      if (profileImg) {
-        profileImg.style.setProperty('--tw-ring-color', theme.ringColor);
-      }
+      if (profileImg) profileImg.style.setProperty('--tw-ring-color', theme.ringColor);
       const profileTitle = document.getElementById('profileTitle');
-      if (profileTitle) {
-        profileTitle.style.color = theme.titleColor;
-      }
+      if (profileTitle) profileTitle.style.color = theme.titleColor;
 
       const refBtn = document.getElementById('refreshBtn');
       refBtn.style.backgroundColor = theme.primary;
@@ -326,7 +586,6 @@
 
       document.getElementById('loadingSpinner').style.borderColor = theme.spinnerColor;
       document.getElementById('loadingSpinner').style.borderTopColor = 'transparent';
-
       document.getElementById('scheduleTextWrapper').style.color = theme.titleColor;
 
       const gpsBtn = document.getElementById('gpsBtn');
@@ -336,16 +595,13 @@
       }
 
       const reBanner = document.getElementById('reopeningBanner');
-      if (reBanner) {
-        reBanner.style.background = theme.bannerBg;
-      }
+      if (reBanner) reBanner.style.background = theme.bannerBg;
 
       actualizarEstilosChips();
     }
 
     function actualizarEstilosChips() {
       const theme = getTemaActual();
-
       document.querySelectorAll('.cat-chip').forEach(btn => {
         const isActivo = btn.dataset.cat === catFiltro;
         if (isActivo) {
@@ -379,39 +635,16 @@
       const btnList = document.getElementById('btnViewList');
       const btnZones = document.getElementById('btnViewZones');
       const btnMap = document.getElementById('btnViewMap');
-
       [btnList, btnZones, btnMap].forEach(btn => {
         btn.style.backgroundColor = 'transparent';
         btn.style.color = '#475569';
       });
-
       const activeBtn = viewMode === 'list' ? btnList : (viewMode === 'zones' ? btnZones : btnMap);
       activeBtn.style.backgroundColor = theme.secondary;
       activeBtn.style.color = theme.secondaryText;
     }
 
-    let entidades = [];
-    let landMap = {};
-    let coordsMap = {};
-    let catFiltro = 'all';
-    let statusFiltro = 'any';
-    let viewMode = 'zones';
-    let autoRefreshTimer = null;
-
-    const PARK_CENTERS = {
-      'dae968d5-630d-4719-8b06-3d107e944401': { lat: 48.8722, lng: 2.7758, zoom: 16 },
-      'ca888437-ebb4-4d50-aed2-d227f7096968': { lat: 48.8683, lng: 2.7806, zoom: 16 },
-      '5adbd2f7-3694-4d23-aaec-4037a056573f': { lat: 40.2295, lng: -3.5938, zoom: 16 },
-      '1ea86991-e2c2-4771-8a32-c6e14c8298a9': { lat: 40.4124, lng: -3.7505, zoom: 16 }
-    };
-
-    let map = null;
-    let markersLayer = null;
-    let userMarker = null;
-
-    let prevStatus = {};
-    let prevWaitTimes = {};
-
+    // FAVORITOS Y MONTADAS
     function getFavoritos() {
       try { return JSON.parse(localStorage.getItem('tp_favs_v2') || '[]'); } catch { return []; }
     }
@@ -440,6 +673,210 @@
       document.getElementById('countRidden').textContent = getRiddenToday().length;
     }
 
+    // METEOROLOGÍA EN TIEMPO REAL CON OPEN-METEO
+    async function cargarMeteorologia(lat, lng) {
+      const tempEl = document.getElementById('weatherTemp');
+      const rainEl = document.getElementById('weatherRain');
+      const sunsetEl = document.getElementById('weatherSunset');
+
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,precipitation,weather_code&hourly=precipitation_probability&daily=sunset&timezone=auto&forecast_days=1`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        weatherData = data;
+
+        const temp = Math.round(data.current?.temperature_2m ?? 0);
+        const wCode = data.current?.weather_code ?? 0;
+        const wInfo = getWeatherDesc(wCode);
+
+        const horaActual = new Date().getHours();
+        const probLluviaArr = (data.hourly?.precipitation_probability || []).slice(horaActual, horaActual + 4);
+        const maxProb = probLluviaArr.length > 0 ? Math.max(...probLluviaArr) : 0;
+
+        let sunsetStr = '--:--';
+        if (data.daily?.sunset?.[0]) {
+          sunsetStr = new Date(data.daily.sunset[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        tempEl.textContent = `${wInfo.icon} ${temp}°C ${wInfo.desc}`;
+        rainEl.innerHTML = maxProb > 35 ? `<span class="text-rose-600 font-bold">⚠️ Lluvia: ${maxProb}%</span>` : `☔ Lluvia: ${maxProb}%`;
+        sunsetEl.textContent = `🌅 Puesta: ${sunsetStr}`;
+      } catch (err) {
+        tempEl.textContent = '🌤️ Clima no disponible';
+      }
+    }
+
+    function getWeatherDesc(code) {
+      if (code === 0) return { icon: '☀️', desc: 'Despejado' };
+      if (code <= 3) return { icon: '⛅', desc: 'Parcial nublado' };
+      if (code <= 48) return { icon: '🌫️', desc: 'Niebla' };
+      if (code <= 55) return { icon: '🌦️', desc: 'Llovizna' };
+      if (code <= 65) return { icon: '🌧️', desc: 'Lluvia' };
+      if (code <= 77) return { icon: '❄️', desc: 'Nieve' };
+      if (code <= 82) return { icon: '🌧️', desc: 'Chubascos' };
+      if (code >= 95) return { icon: '⛈️', desc: 'Tormenta' };
+      return { icon: '🌤️', desc: 'Nublado' };
+    }
+
+    // RECOMENDADOR INTELIGENTE: ¿A CUÁL VOY?
+    function recomendarAtraccion() {
+      const favs = getFavoritos();
+      const ridden = getRiddenToday();
+      const abiertas = entidades.filter(e => e.status === 'OPERATING' && (e.entityType === 'ATTRACTION' || !e.showtimes));
+
+      if (abiertas.length === 0) {
+        alert('No hay atracciones abiertas reportando esperas en este momento.');
+        return;
+      }
+
+      const noMontadas = abiertas.filter(e => !ridden.includes(e.id));
+      const pool = noMontadas.length > 0 ? noMontadas : abiertas;
+
+      let elegida = null;
+      let motivo = '';
+
+      const favBaja = pool.find(e => favs.includes(e.id) && (e.queue?.STANDBY?.waitTime ?? 99) <= 30);
+      if (favBaja) {
+        elegida = favBaja;
+        motivo = `⭐ ¡Es tu favorita y la cola está baja (${elegida.queue.STANDBY.waitTime} min)!`;
+      } else {
+        const conTiempo = pool.filter(e => e.queue?.STANDBY?.waitTime != null)
+          .sort((a,b) => a.queue.STANDBY.waitTime - b.queue.STANDBY.waitTime);
+
+        if (conTiempo.length > 0) {
+          elegida = conTiempo[0];
+          motivo = `⚡ Es la atracción con menos cola actual (${elegida.queue.STANDBY.waitTime} min) y aún no te has montado hoy.`;
+        } else {
+          elegida = pool[0];
+          motivo = '🟢 Está operando con acceso fluido.';
+        }
+      }
+
+      document.getElementById('recRideName').textContent = elegida.name;
+      const wait = elegida.queue?.STANDBY?.waitTime;
+      const badge = document.getElementById('recRideBadge');
+      if (wait != null) {
+        badge.textContent = `${wait} min`;
+        badge.className = 'text-xs font-black inline-block px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300';
+      } else {
+        badge.textContent = 'Abierta';
+        badge.className = 'text-xs font-black inline-block px-3 py-1 rounded-xl bg-slate-100 text-slate-800';
+      }
+      document.getElementById('recRideReason').textContent = motivo;
+
+      const btnMap = document.getElementById('recBtnMap');
+      btnMap.onclick = () => {
+        cerrarRecModal();
+        irAlMapa(elegida.id);
+      };
+
+      const modal = document.getElementById('recModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function cerrarRecModal() {
+      const modal = document.getElementById('recModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // COPIAR REPORTE LISTO PARA WHATSAPP
+    function copiarReporte() {
+      const parkSelect = document.getElementById('parkSelect');
+      const parkName = parkSelect.options[parkSelect.selectedIndex].text;
+      const ahora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const openAttractions = entidades.filter(e => e.status === 'OPERATING' && e.queue?.STANDBY?.waitTime != null)
+        .sort((a,b) => b.queue.STANDBY.waitTime - a.queue.STANDBY.waitTime);
+      const paused = entidades.filter(e => e.status === 'DOWN');
+
+      let txt = `🎢 REPORTE EN DIRECTO: ${parkName} (${ahora})\n`;
+
+      if (openAttractions.length > 0) {
+        txt += `\n🔥 MÁS ESPERA:\n`;
+        openAttractions.slice(0, 4).forEach(a => txt += `• ${a.name}: ${a.queue.STANDBY.waitTime} min\n`);
+
+        txt += `\n⚡ MENOS ESPERA (Walk-on):\n`;
+        openAttractions.slice(-4).reverse().forEach(a => txt += `• ${a.name}: ${a.queue.STANDBY.waitTime} min\n`);
+      }
+
+      if (paused.length > 0) {
+        txt += `\n🛠️ EN PAUSA TÉCNICA:\n`;
+        paused.slice(0, 3).forEach(a => txt += `• ${a.name}\n`);
+      }
+
+      txt += `\n📱 Síguenos en @undiazendisney (TikTok & Instagram)`;
+
+      navigator.clipboard.writeText(txt).then(() => {
+        mostrarToast('📋 ¡Reporte copiado! Pégalo en WhatsApp');
+      }).catch(() => {
+        alert('No se pudo copiar automáticamente.');
+      });
+    }
+
+    function mostrarToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 2800);
+    }
+
+    // MODAL: TOP 5 PARA STORY
+    function abrirModalStory() {
+      const parkSelect = document.getElementById('parkSelect');
+      const parkName = parkSelect.options[parkSelect.selectedIndex].text;
+      const theme = getTemaActual();
+      const ahora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      document.getElementById('storyParkName').textContent = parkName;
+      document.getElementById('storyParkIcon').textContent = theme.icon;
+      document.getElementById('storyTime').textContent = ahora;
+
+      const tempTxt = document.getElementById('weatherTemp').textContent;
+      document.getElementById('storyWeatherInfo').textContent = tempTxt;
+
+      const openAttractions = entidades.filter(e => e.status === 'OPERATING' && e.queue?.STANDBY?.waitTime != null)
+        .sort((a,b) => b.queue.STANDBY.waitTime - a.queue.STANDBY.waitTime);
+
+      const topWaitEl = document.getElementById('storyTopWait');
+      const lowWaitEl = document.getElementById('storyLowWait');
+      topWaitEl.innerHTML = '';
+      lowWaitEl.innerHTML = '';
+
+      if (openAttractions.length === 0) {
+        topWaitEl.innerHTML = '<p class="text-slate-400 text-[11px]">No hay tiempos en vivo disponibles ahora.</p>';
+      } else {
+        openAttractions.slice(0, 5).forEach((item, i) => {
+          topWaitEl.innerHTML += `
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="truncate pr-2 font-medium text-slate-200">${i+1}. ${item.name}</span>
+              <span class="font-extrabold text-rose-400 whitespace-nowrap">${item.queue.STANDBY.waitTime} min</span>
+            </div>`;
+        });
+
+        openAttractions.slice(-5).reverse().forEach((item, i) => {
+          lowWaitEl.innerHTML += `
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="truncate pr-2 font-medium text-slate-200">${i+1}. ${item.name}</span>
+              <span class="font-extrabold text-emerald-400 whitespace-nowrap">${item.queue.STANDBY.waitTime} min</span>
+            </div>`;
+        });
+      }
+
+      const modal = document.getElementById('storyModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function cerrarModalStory() {
+      const modal = document.getElementById('storyModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // MAPA
     function initMap() {
       if (map) return;
       const parkId = document.getElementById('parkSelect').value;
@@ -450,10 +887,7 @@
         attributionControl: false
       }).setView([initial.lat, initial.lng], initial.zoom);
 
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
-      }).addTo(map);
-
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
       L.control.zoom({ position: 'bottomleft' }).addTo(map);
       markersLayer = L.layerGroup().addTo(map);
     }
@@ -534,6 +968,12 @@
       cargarTodo();
     }
 
+    // CLASIFICADOR DE COASTERS
+    function isCoaster(item) {
+      const n = item.name.toLowerCase();
+      return /coaster|montaña|mountain|stunt|express|batman|superman|hulk|space|flight|rock|shadows|inver|loop|shambhala|dragon khan|furius|velocicoaster|tron|hagrid|mummy|slinky|seven dwarfs|everest|guardians|rewind|stardust|racers|werewolf|gliders|mine-cart|hiccup|crush|big thunder/.test(n);
+    }
+
     function getCategory(item) {
       const name = item.name.toLowerCase();
       const type = item.entityType;
@@ -552,7 +992,7 @@
       if (category === 'dining') return '🍔';
       if (category === 'shops') return '🛍️';
 
-      if (/coaster|montaña|stunt|express|batman|superman|hulk|space|flight|rock|shadows|inver|loop/.test(n)) return '🎢';
+      if (isCoaster(item)) return '🎢';
       if (/water|rio|river|cataratas|rapidos|splash|flume|cascadas|barca/.test(n)) return '🌊';
       if (/terror|hotel|haunted|fantasma|phantom|mansion|tomb|miedo|horror|inferno/.test(n)) return '👻';
       if (/simulador|flight|3d|4d|cine|blaster|laser|star tours/.test(n)) return '🥽';
@@ -561,6 +1001,7 @@
       return '🎡';
     }
 
+    // CARGA DE DATOS EN PARALELO
     async function cargarTodo() {
       const parkId = document.getElementById('parkSelect').value;
       const loader = document.getElementById('loadingStatus');
@@ -570,8 +1011,11 @@
       document.getElementById('cardsContainer').innerHTML = '';
       document.getElementById('lastUpdateTxt').textContent = 'Sincronizando...';
 
+      const coords = PARK_CENTERS[parkId] || { lat: 48.8722, lng: 2.7758 };
+
       try {
         await Promise.allSettled([
+          cargarMeteorologia(coords.lat, coords.lng),
           cargarZonasYCoords(parkId),
           cargarHorarios(parkId),
           cargarLive(parkId)
@@ -623,9 +1067,7 @@
           if (n.entityType === 'LAND') activeLand = n.name;
           else if (n.parentId && landsById[n.parentId]) activeLand = landsById[n.parentId];
 
-          if (n.id && activeLand && n.entityType !== 'LAND') {
-            landMap[n.id] = activeLand;
-          }
+          if (n.id && activeLand && n.entityType !== 'LAND') landMap[n.id] = activeLand;
           if (n.location && n.location.latitude && n.location.longitude) {
             coordsMap[n.id] = { lat: n.location.latitude, lng: n.location.longitude };
           }
@@ -658,10 +1100,28 @@
     }
 
     async function cargarLive(parkId) {
-      const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/live`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      entidades = data.liveData || [];
+      const offlineBanner = document.getElementById('offlineBanner');
+      try {
+        const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/live`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        entidades = data.liveData || [];
+
+        localStorage.setItem(`tp_cache_live_${parkId}`, JSON.stringify({
+          data: entidades,
+          time: new Date().toISOString()
+        }));
+        offlineBanner.classList.add('hidden');
+      } catch (err) {
+        const cache = localStorage.getItem(`tp_cache_live_${parkId}`);
+        if (cache) {
+          const parsed = JSON.parse(cache);
+          entidades = parsed.data || [];
+          const horaCache = new Date(parsed.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          document.getElementById('offlineBannerText').textContent = `📶 Modo túnel / sin cobertura: Datos guardados de las ${horaCache}`;
+          offlineBanner.classList.remove('hidden');
+        }
+      }
 
       let abiertas = 0, pausa = 0, cerradas = 0;
       let reabiertas = [];
@@ -717,11 +1177,8 @@
     }
 
     function actualizarVistas() {
-      if (viewMode === 'map') {
-        renderMapa();
-      } else {
-        renderLista();
-      }
+      if (viewMode === 'map') renderMapa();
+      else renderLista();
     }
 
     function getElementosFiltrados() {
@@ -739,7 +1196,8 @@
         const wait = item.queue?.STANDBY?.waitTime;
 
         if (catFiltro === 'favs' && !isFav) return false;
-        if (catFiltro !== 'all' && catFiltro !== 'favs' && cat !== catFiltro) return false;
+        if (catFiltro === 'coasters' && !isCoaster(item)) return false;
+        if (catFiltro !== 'all' && catFiltro !== 'favs' && catFiltro !== 'coasters' && cat !== catFiltro) return false;
 
         if (statusFiltro === 'open' && status !== 'OPERATING') return false;
         if (statusFiltro === 'walkon' && (status !== 'OPERATING' || wait == null || wait >= 15)) return false;
@@ -966,7 +1424,7 @@
 
       const card = document.createElement('div');
       card.className = `bg-white border ${isFav ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'} p-3.5 rounded-2xl shadow-sm hover:shadow transition ${isRidden ? 'opacity-40' : ''}`;
-      
+
       card.innerHTML = `
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-start gap-2.5 min-w-0 flex-1">
@@ -979,7 +1437,7 @@
                 <h3 class="font-bold text-sm leading-snug line-clamp-2 ${isRidden ? 'line-through text-slate-400' : ''}" style="color: ${isRidden ? '#94a3b8' : theme.titleColor}">${item.name}</h3>
               </div>
               <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider whitespace-nowrap">${labelsCat[cat]}</span>
+                <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider whitespace-nowrap">${isCoaster(item) ? 'Montaña Rusa' : labelsCat[cat]}</span>
                 ${land ? `<span class="text-[10px] font-bold truncate ${theme.landColor}">• ${land}</span>` : ''}
               </div>
             </div>
