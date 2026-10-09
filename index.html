@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tiempos, Zonas & Mapa en Vivo</title>
+  <title>Un Díaz en Disney - Tiempos & Zonas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Estilos y scripts de Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -42,7 +42,41 @@
     <button onclick="document.getElementById('reopeningBanner').classList.add('hidden')" class="text-white/90 hover:text-white text-base font-bold ml-2">✕</button>
   </div>
 
-  <!-- Cabecera fija con franja temática inferior -->
+  <!-- ======================================================== -->
+  <!-- ARRIBA DEL TODO: CABECERA DE PERFIL Y REDES (CENTRADO)   -->
+  <!-- ======================================================== -->
+  <div class="w-full bg-white border-b border-slate-200/80 pt-6 pb-5 px-4 shadow-sm">
+    <div class="max-w-md mx-auto flex flex-col items-center justify-center text-center space-y-3">
+      <!-- Icono / Avatar con anillo de color dinámico según el parque -->
+      <div class="relative">
+        <img id="profileImg" src="avatar.jpg" alt="Un Díaz en Disney" 
+             class="w-24 h-24 rounded-full object-cover shadow-lg border-2 border-white ring-4 transition-all duration-300"
+             onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Un+Diaz+En+Disney&background=0f172a&color=fff&size=150';">
+      </div>
+
+      <!-- Nombre y usuario -->
+      <div>
+        <h2 id="profileTitle" class="text-lg font-black tracking-tight leading-snug transition-colors duration-300">Un Díaz en Disney</h2>
+        <p class="text-xs text-slate-500 font-semibold tracking-wide">@undiazendisney</p>
+      </div>
+
+      <!-- Enlaces directos a TikTok e Instagram -->
+      <div class="flex items-center justify-center gap-2.5 pt-1">
+        <a href="https://www.tiktok.com/@undiazendisney" target="_blank" rel="noopener noreferrer" 
+           class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-black text-white hover:bg-slate-800 transition-all shadow-sm active:scale-95">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.24 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+          <span>TikTok</span>
+        </a>
+        <a href="https://www.instagram.com/undiazendisney/" target="_blank" rel="noopener noreferrer" 
+           class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white hover:opacity-90 transition-all shadow-sm active:scale-95">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.13-3.584.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          <span>Instagram</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de navegación fija / controles -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-4 pt-3 pb-2.5 shadow-sm">
     <div class="max-w-md mx-auto flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
@@ -189,7 +223,7 @@
     const THEMES = {
       // 1. Disneyland Park Paris (Mickey Fantasía: Blanco, Rojo Escarlata, Azul Marino)
       'dae968d5-630d-4719-8b06-3d107e944401': {
-        title: 'UDED - Tiempos Disneyland Park',
+        title: 'Tiempos Disneyland Park (Paris)',
         icon: '🪄',
         bodyBg: '#f8fafc',
         primary: '#dc2626',      // Rojo escarlata
@@ -202,11 +236,12 @@
         bannerBg: '#dc2626',
         gpsBorder: '#dc2626',
         gpsBg: '#172554',
-        spinnerColor: '#dc2626'
+        spinnerColor: '#dc2626',
+        ringColor: '#dc2626'
       },
       // 2. Disney Adventure World (Frozen: Blanco escarcha, Azul hielo, Fiordo nórdico)
       'ca888437-ebb4-4d50-aed2-d227f7096968': {
-        title: 'UDED - Tiempos Disneyland Adventure World',
+        title: 'Tiempos Disney Adventure World (Paris)',
         icon: '❄️',
         bodyBg: '#f0f9ff',
         primary: '#0284c7',      // Azul cian glaciar
@@ -219,11 +254,12 @@
         bannerBg: '#0284c7',
         gpsBorder: '#38bdf8',
         gpsBg: '#0c4a6e',
-        spinnerColor: '#0284c7'
+        spinnerColor: '#0284c7',
+        ringColor: '#0284c7'
       },
       // 3. Parque Warner Madrid (Batman / Gotham City Escape: Blanco ceniza, Oro murciélago, Negro)
       '5adbd2f7-3694-4d23-aaec-4037a056573f': {
-        title: 'UDED - Tiempos Parque Warner',
+        title: 'Tiempos Parque Warner (Madrid)',
         icon: '🦇',
         bodyBg: '#f8fafc',
         primary: '#eab308',      // Amarillo/oro Batman
@@ -236,11 +272,12 @@
         bannerBg: '#0f172a',
         gpsBorder: '#eab308',
         gpsBg: '#0f172a',
-        spinnerColor: '#eab308'
+        spinnerColor: '#eab308',
+        ringColor: '#eab308'
       },
       // 4. Parque de Atracciones de Madrid (Arcoíris: Multicolor alegre, Violeta festivo, Índigo)
       '1ea86991-e2c2-4771-8a32-c6e14c8298a9': {
-        title: 'UDED - Tiempos Parque de Atracciones de Madrid',
+        title: 'Tiempos Parque de Atracciones de Madrid (Madrid)',
         icon: '🌈',
         bodyBg: '#ffffff',
         primary: '#7c3aed',      // Violeta festivo
@@ -253,7 +290,8 @@
         bannerBg: 'linear-gradient(90deg, #ef4444, #f97316, #10b981, #6366f1)',
         gpsBorder: '#ec4899',
         gpsBg: '#1e1b4b',
-        spinnerColor: '#7c3aed'
+        spinnerColor: '#7c3aed',
+        ringColor: '#7c3aed'
       }
     };
 
@@ -271,6 +309,16 @@
       document.getElementById('headerTitle').textContent = theme.title;
       document.getElementById('headerTitle').style.color = theme.titleColor;
       document.getElementById('headerAccentBar').style.background = theme.accentBar;
+
+      // Anillo y nombre de perfil
+      const profileImg = document.getElementById('profileImg');
+      if (profileImg) {
+        profileImg.style.setProperty('--tw-ring-color', theme.ringColor);
+      }
+      const profileTitle = document.getElementById('profileTitle');
+      if (profileTitle) {
+        profileTitle.style.color = theme.titleColor;
+      }
 
       const refBtn = document.getElementById('refreshBtn');
       refBtn.style.backgroundColor = theme.primary;
@@ -351,10 +399,10 @@
     let autoRefreshTimer = null;
 
     const PARK_CENTERS = {
-      'dae968d5-630d-4719-8b06-3d107e944401': { lat: 48.8722, lng: 2.7758, zoom: 16 },  // Disneyland Park Paris
-      'ca888437-ebb4-4d50-aed2-d227f7096968': { lat: 48.8683, lng: 2.7806, zoom: 16 },  // Disney Adventure World
-      '5adbd2f7-3694-4d23-aaec-4037a056573f': { lat: 40.2295, lng: -3.5938, zoom: 16 }, // Parque Warner
-      '1ea86991-e2c2-4771-8a32-c6e14c8298a9': { lat: 40.4124, lng: -3.7505, zoom: 16 }  // Parque Atracciones Madrid
+      'dae968d5-630d-4719-8b06-3d107e944401': { lat: 48.8722, lng: 2.7758, zoom: 16 },
+      'ca888437-ebb4-4d50-aed2-d227f7096968': { lat: 48.8683, lng: 2.7806, zoom: 16 },
+      '5adbd2f7-3694-4d23-aaec-4037a056573f': { lat: 40.2295, lng: -3.5938, zoom: 16 },
+      '1ea86991-e2c2-4771-8a32-c6e14c8298a9': { lat: 40.4124, lng: -3.7505, zoom: 16 }
     };
 
     let map = null;
@@ -392,7 +440,6 @@
       document.getElementById('countRidden').textContent = getRiddenToday().length;
     }
 
-    // MAPA CON OPENSTREETMAP LIBRE (Sin API Key)
     function initMap() {
       if (map) return;
       const parkId = document.getElementById('parkSelect').value;
@@ -403,7 +450,6 @@
         attributionControl: false
       }).setView([initial.lat, initial.lng], initial.zoom);
 
-      // OpenStreetMap público y sin credenciales
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19
       }).addTo(map);
