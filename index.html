@@ -67,7 +67,7 @@
         </button>
       </div>
     </div>
-    <!-- Franja inferior de color temática (ola de Mickey, hielo, bat-oro o arcoíris) -->
+    <!-- Franja inferior de color temática -->
     <div id="headerAccentBar" class="h-1 w-full max-w-md mx-auto mt-2.5 rounded-full transition-all duration-500"></div>
   </header>
 
@@ -164,7 +164,7 @@
     <!-- CONTENEDOR 1: Vista de Lista y Zonas -->
     <div id="cardsContainer" class="space-y-4"></div>
 
-    <!-- CONTENEDOR 2: Vista de Mapa Interactivo con CARTO Light -->
+    <!-- CONTENEDOR 2: Vista de Mapa Interactivo con OpenStreetMap -->
     <div id="mapWrapper" class="hidden relative">
       <div id="map" class="w-full h-[65vh] rounded-2xl border border-slate-300 overflow-hidden shadow-lg z-10"></div>
       
@@ -189,7 +189,7 @@
     const THEMES = {
       // 1. Disneyland Park Paris (Mickey Fantasía: Blanco, Rojo Escarlata, Azul Marino)
       'dae968d5-630d-4719-8b06-3d107e944401': {
-        title: 'Tiempos Disneyland Park',
+        title: 'UDED - Tiempos Disneyland Park',
         icon: '🪄',
         bodyBg: '#f8fafc',
         primary: '#dc2626',      // Rojo escarlata
@@ -206,7 +206,7 @@
       },
       // 2. Disney Adventure World (Frozen: Blanco escarcha, Azul hielo, Fiordo nórdico)
       'ca888437-ebb4-4d50-aed2-d227f7096968': {
-        title: 'Tiempos Disney Adventure World',
+        title: 'UDED - Tiempos Disneyland Adventure World',
         icon: '❄️',
         bodyBg: '#f0f9ff',
         primary: '#0284c7',      // Azul cian glaciar
@@ -223,7 +223,7 @@
       },
       // 3. Parque Warner Madrid (Batman / Gotham City Escape: Blanco ceniza, Oro murciélago, Negro)
       '5adbd2f7-3694-4d23-aaec-4037a056573f': {
-        title: 'Tiempos Parque Warner',
+        title: 'UDED - Tiempos Parque Warner',
         icon: '🦇',
         bodyBg: '#f8fafc',
         primary: '#eab308',      // Amarillo/oro Batman
@@ -240,7 +240,7 @@
       },
       // 4. Parque de Atracciones de Madrid (Arcoíris: Multicolor alegre, Violeta festivo, Índigo)
       '1ea86991-e2c2-4771-8a32-c6e14c8298a9': {
-        title: 'Tiempos Parque de atracciones de Madrid',
+        title: 'UDED - Tiempos Parque de Atracciones de Madrid',
         icon: '🌈',
         bodyBg: '#ffffff',
         primary: '#7c3aed',      // Violeta festivo
@@ -265,35 +265,28 @@
     function aplicarTema() {
       const theme = getTemaActual();
 
-      // Fondo general
       document.body.style.backgroundColor = theme.bodyBg;
 
-      // Cabecera e icono
       document.getElementById('headerIcon').textContent = theme.icon;
       document.getElementById('headerTitle').textContent = theme.title;
       document.getElementById('headerTitle').style.color = theme.titleColor;
       document.getElementById('headerAccentBar').style.background = theme.accentBar;
 
-      // Botón refrescar
       const refBtn = document.getElementById('refreshBtn');
       refBtn.style.backgroundColor = theme.primary;
       refBtn.style.color = theme.primaryText;
 
-      // Spinner de carga
       document.getElementById('loadingSpinner').style.borderColor = theme.spinnerColor;
       document.getElementById('loadingSpinner').style.borderTopColor = 'transparent';
 
-      // Horario título color
       document.getElementById('scheduleTextWrapper').style.color = theme.titleColor;
 
-      // Botón GPS flotante
       const gpsBtn = document.getElementById('gpsBtn');
       if (gpsBtn) {
         gpsBtn.style.backgroundColor = theme.gpsBg;
         gpsBtn.style.borderColor = theme.gpsBorder;
       }
 
-      // Banner reaperturas
       const reBanner = document.getElementById('reopeningBanner');
       if (reBanner) {
         reBanner.style.background = theme.bannerBg;
@@ -305,7 +298,6 @@
     function actualizarEstilosChips() {
       const theme = getTemaActual();
 
-      // Categorías
       document.querySelectorAll('.cat-chip').forEach(btn => {
         const isActivo = btn.dataset.cat === catFiltro;
         if (isActivo) {
@@ -321,7 +313,6 @@
         }
       });
 
-      // Estados
       document.querySelectorAll('.status-chip').forEach(btn => {
         const isActivo = btn.dataset.stat === statusFiltro;
         if (isActivo) {
@@ -337,7 +328,6 @@
         }
       });
 
-      // Vistas (Lista / Zonas / Mapa)
       const btnList = document.getElementById('btnViewList');
       const btnZones = document.getElementById('btnViewZones');
       const btnMap = document.getElementById('btnViewMap');
@@ -359,9 +349,6 @@
     let statusFiltro = 'any';
     let viewMode = 'zones';
     let autoRefreshTimer = null;
-
-    // API Key de CARTO
-    const CARTO_API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJhIjoiYWNfMHM5eTAxeWYiLCJqdGkiOiIwMjlmMzlhMDFjMGYzMzQ0ZmUyZThhZWQwMjE3OWQ1NiJ9.hfeha3ji22Wx8h378_GRJIS2xb5lo9Ky-WTMsN2rySE';
 
     const PARK_CENTERS = {
       'dae968d5-630d-4719-8b06-3d107e944401': { lat: 48.8722, lng: 2.7758, zoom: 16 },  // Disneyland Park Paris
@@ -405,6 +392,7 @@
       document.getElementById('countRidden').textContent = getRiddenToday().length;
     }
 
+    // MAPA CON OPENSTREETMAP LIBRE (Sin API Key)
     function initMap() {
       if (map) return;
       const parkId = document.getElementById('parkSelect').value;
@@ -415,9 +403,9 @@
         attributionControl: false
       }).setView([initial.lat, initial.lng], initial.zoom);
 
-      L.tileLayer(`https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png?key=${CARTO_API_KEY}`, {
-        maxZoom: 19,
-        subdomains: 'abcd'
+      // OpenStreetMap público y sin credenciales
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
       }).addTo(map);
 
       L.control.zoom({ position: 'bottomleft' }).addTo(map);
