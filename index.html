@@ -3,137 +3,388 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tiempos de Parques</title>
+  <title>Tiempos & Shows en Vivo</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Ocultar barra de desplazamiento manteniendo scroll suave */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-12">
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-16 antialiased">
 
   <!-- Cabecera fija -->
-  <header class="sticky top-0 z-20 bg-slate-800/90 backdrop-blur border-b border-slate-700 px-4 py-3">
-    <div class="max-w-md mx-auto flex items-center justify-between">
-      <h1 class="text-lg font-bold flex items-center gap-2">
-        🎢 <span>WaitTimes</span>
-      </h1>
-      <button id="refreshBtn" onclick="cargarTiempos()" class="text-xs bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-full font-medium transition">
-        Actualizar
-      </button>
+  <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-lg">
+    <div class="max-w-md mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🎢</span>
+        <div>
+          <h1 class="text-base font-bold leading-tight tracking-tight">WaitTimes Live</h1>
+          <p id="lastUpdateTxt" class="text-[10px] text-slate-400">Actualizando...</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="refreshBtn" onclick="cargarTodo()" class="flex items-center gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium px-3 py-1.5 rounded-full transition shadow">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          <span>Refrescar</span>
+        </button>
+      </div>
     </div>
   </header>
 
-  <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
-    <!-- Selector de Parque -->
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Parque seleccionado</label>
-        <select id="parkSelect" onchange="cargarTiempos()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <option value="5adbd2f7-3694-4d23-aaec-4037a056573f">Parque Warner Madrid</option>
-          <option value="1ea86991-e2c2-4771-8a32-c6e14c8298a9">Parque de Atracciones de Madrid</option>
-          <option value="dae968d5-630d-4719-8b06-3d107e944401">Disneyland Park (París)</option>
-          <option value="ca888437-ebb4-4d50-aed2-d227f7096968">Disney Adventure World (París)</option>
-        </select>
-      </div>
+  <main class="max-w-md mx-auto px-4 pt-3 space-y-3">
 
-    <!-- Buscador / Filtro -->
+    <!-- Selector de Parque -->
     <div>
-      <input type="text" id="searchInput" oninput="filtrarAtracciones()" placeholder="Buscar atracción..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <select id="parkSelect" onchange="cambiarParque()" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-3.5 py-2.5 text-sm font-medium text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner">
+        <option value="5adbd2f7-3694-4d23-aaec-4037a056573f">Parque Warner Madrid</option>
+        <option value="1ea86991-e2c2-4771-8a32-c6e14c8298a9">Parque de Atracciones de Madrid</option>
+        <option value="dae968d5-630d-4719-8b06-3d107e944401">Disneyland Park (París)</option>
+        <option value="ca888437-ebb4-4d50-aed2-d227f7096968">Disney Adventure World (París)</option>
+      </select>
     </div>
 
-    <!-- Estado de carga / Error -->
-    <div id="statusMessage" class="text-center py-4 text-xs text-slate-400">Cargando datos en vivo...</div>
+    <!-- Tarjeta de Horario y Resumen de Estado -->
+    <div class="bg-gradient-to-br from-slate-900 to-slate-850 border border-slate-800 rounded-2xl p-3.5 shadow-sm space-y-2.5">
+      <div class="flex items-center justify-between text-xs">
+        <div class="flex items-center gap-1.5 font-medium text-slate-300">
+          <span>🕒</span>
+          <span id="scheduleText">Consultando horarios de hoy...</span>
+        </div>
+        <label class="flex items-center gap-1 text-[11px] text-slate-400 cursor-pointer">
+          <input type="checkbox" id="autoRefreshCheck" onchange="toggleAutoRefresh()" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+          Auto 60s
+        </label>
+      </div>
+      <!-- Métricas rápidas -->
+      <div class="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800/80 text-center text-[11px]">
+        <div class="bg-emerald-950/30 border border-emerald-900/40 rounded-xl py-1 px-2">
+          <span class="text-emerald-400 font-bold text-sm block" id="countOpen">0</span>
+          <span class="text-slate-400 text-[10px]">Abiertas</span>
+        </div>
+        <div class="bg-amber-950/30 border border-amber-900/40 rounded-xl py-1 px-2">
+          <span class="text-amber-400 font-bold text-sm block" id="countDown">0</span>
+          <span class="text-slate-400 text-[10px]">Pausa técnica</span>
+        </div>
+        <div class="bg-slate-800/40 border border-slate-800 rounded-xl py-1 px-2">
+          <span class="text-slate-400 font-bold text-sm block" id="countClosed">0</span>
+          <span class="text-slate-500 text-[10px]">Cerradas</span>
+        </div>
+      </div>
+    </div>
 
-    <!-- Lista de Atracciones -->
-    <div id="ridesList" class="space-y-2"></div>
+    <!-- Filtros de Categoría (Scroll horizontal) -->
+    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-xs">
+      <button onclick="setFilter('all')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-indigo-600 text-white" data-filter="all">Todos</button>
+      <button onclick="setFilter('favs')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-filter="favs">⭐ Favoritos</button>
+      <button onclick="setFilter('attractions')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-filter="attractions">🎢 Atracciones</button>
+      <button onclick="setFilter('shows')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-filter="shows">🎭 Shows</button>
+      <button onclick="setFilter('open')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-filter="open">🟢 Abiertas</button>
+      <button onclick="setFilter('single')" class="filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800" data-filter="single">⚡ Single Rider</button>
+    </div>
 
-    <!-- Atribución requerida por la API -->
-    <footer class="pt-6 text-center text-xs text-slate-500">
-      <a href="https://themeparks.wiki" target="_blank" class="underline hover:text-slate-400">
-        Powered by ThemeParks.wiki
-      </a>
+    <!-- Buscador y Ordenación -->
+    <div class="flex gap-2">
+      <div class="relative flex-1">
+        <input type="text" id="searchInput" oninput="renderLista()" placeholder="Buscar atracción o show..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs placeholder-slate-500 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+      </div>
+      <select id="sortSelect" onchange="renderLista()" class="bg-slate-900 border border-slate-800 rounded-xl px-2 py-2 text-xs text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="waitDesc">Más espera</option>
+        <option value="waitAsc">Menos espera</option>
+        <option value="alpha">A - Z</option>
+      </select>
+    </div>
+
+    <!-- Indicador de Carga -->
+    <div id="loadingStatus" class="text-center py-6 text-xs text-slate-400">
+      <div class="inline-block animate-spin rounded-full h-5 w-5 border-2 border-indigo-500 border-t-transparent mb-2"></div>
+      <div>Cargando datos en vivo...</div>
+    </div>
+
+    <!-- Lista de Contenido -->
+    <div id="cardsContainer" class="space-y-2"></div>
+
+    <!-- Pie de página con atribución -->
+    <footer class="pt-6 pb-2 text-center text-xs text-slate-500 space-y-1">
+      <p>
+        <a href="https://themeparks.wiki" target="_blank" class="underline hover:text-slate-400">
+          Powered by ThemeParks.wiki
+        </a>
+      </p>
+      <p class="text-[10px] text-slate-600">Actualización en tiempo real directo al dispositivo</p>
     </footer>
   </main>
 
   <script>
-    let todasLasAtracciones = [];
+    let entidades = [];
+    let filtroActivo = 'all';
+    let autoRefreshTimer = null;
 
-    async function cargarTiempos() {
-      const parkId = document.getElementById('parkSelect').value;
-      const statusMsg = document.getElementById('statusMessage');
-      const listContainer = document.getElementById('ridesList');
-
-      statusMsg.textContent = 'Obteniendo tiempos en vivo...';
-      statusMsg.classList.remove('hidden');
-      listContainer.innerHTML = '';
-
+    // Manejo de Favoritos en LocalStorage
+    function getFavoritos() {
       try {
-        const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/live`);
-        if (!res.ok) throw new Error('Error al conectar con la API');
-        const data = await res.json();
-
-        // Filtrar y ordenar: solo elementos de tipo atracción o con cola
-        todasLasAtracciones = (data.liveData || [])
-          .filter(item => item.entityType === 'ATTRACTION' || item.queue)
-          .sort((a, b) => {
-            const waitA = a.queue?.STANDBY?.waitTime ?? -1;
-            const waitB = b.queue?.STANDBY?.waitTime ?? -1;
-            return waitB - waitA; // Las de más cola primero
-          });
-
-        statusMsg.classList.add('hidden');
-        filtrarAtracciones();
-      } catch (err) {
-        statusMsg.textContent = 'No se pudieron cargar los datos. Revisa la conexión.';
-        console.error(err);
+        return JSON.parse(localStorage.getItem('tp_favs_v1') || '[]');
+      } catch {
+        return [];
       }
     }
 
-    function filtrarAtracciones() {
-      const query = document.getElementById('searchInput').value.toLowerCase();
-      const listContainer = document.getElementById('ridesList');
-      listContainer.innerHTML = '';
+    function toggleFavorito(id, event) {
+      if (event) event.stopPropagation();
+      let favs = getFavoritos();
+      if (favs.includes(id)) {
+        favs = favs.filter(fId => fId !== id);
+      } else {
+        favs.push(id);
+      }
+      localStorage.setItem('tp_favs_v1', JSON.stringify(favs));
+      renderLista();
+    }
 
-      const filtradas = todasLasAtracciones.filter(r => r.name.toLowerCase().includes(query));
+    // Carga de horarios y datos en vivo en paralelo
+    async function cargarTodo() {
+      const parkId = document.getElementById('parkSelect').value;
+      const loader = document.getElementById('loadingStatus');
+      const container = document.getElementById('cardsContainer');
 
-      if (filtradas.length === 0) {
-        listContainer.innerHTML = '<p class="text-center text-xs text-slate-500 py-4">No se encontraron atracciones.</p>';
+      loader.classList.remove('hidden');
+      container.innerHTML = '';
+      document.getElementById('lastUpdateTxt').textContent = 'Consultando API...';
+
+      try {
+        await Promise.allSettled([
+          cargarHorarios(parkId),
+          cargarLive(parkId)
+        ]);
+        const ahora = new Date();
+        document.getElementById('lastUpdateTxt').textContent = `Actualizado ${ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+      } catch (err) {
+        console.error('Error general:', err);
+      } finally {
+        loader.classList.add('hidden');
+      }
+    }
+
+    function cambiarParque() {
+      cargarTodo();
+    }
+
+    // Consulta de horarios (/schedule)
+    async function cargarHorarios(parkId) {
+      const scheduleTxt = document.getElementById('scheduleText');
+      try {
+        const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/schedule`);
+        if (!res.ok) throw new Error('Schedule no disponible');
+        const data = await res.json();
+        const lista = Array.isArray(data) ? data : (data.schedule || []);
+
+        const hoyStr = new Date().toISOString().split('T')[0];
+        const hoySchedule = lista.find(item => item.date === hoyStr && item.type === 'OPERATING') || lista[0];
+
+        if (hoySchedule && hoySchedule.openingTime && hoySchedule.closingTime) {
+          const open = new Date(hoySchedule.openingTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const close = new Date(hoySchedule.closingTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          scheduleTxt.textContent = `Hoy: ${open} – ${close}`;
+        } else {
+          scheduleTxt.textContent = 'Horario de hoy no publicado';
+        }
+      } catch (e) {
+        scheduleTxt.textContent = 'Horario del parque no disponible';
+      }
+    }
+
+    // Consulta de tiempos en vivo (/live)
+    async function cargarLive(parkId) {
+      const res = await fetch(`https://api.themeparks.wiki/v1/entity/${parkId}/live`);
+      if (!res.ok) throw new Error('Error al conectar con los datos en vivo');
+      const data = await res.json();
+
+      entidades = data.liveData || [];
+
+      // Conteo de métricas
+      let abiertas = 0, pausa = 0, cerradas = 0;
+      entidades.forEach(item => {
+        if (item.status === 'OPERATING') abiertas++;
+        else if (item.status === 'DOWN') pausa++;
+        else cerradas++;
+      });
+
+      document.getElementById('countOpen').textContent = abiertas;
+      document.getElementById('countDown').textContent = pausa;
+      document.getElementById('countClosed').textContent = cerradas;
+
+      renderLista();
+    }
+
+    function setFilter(filtro) {
+      filtroActivo = filtro;
+      document.querySelectorAll('.filter-chip').forEach(btn => {
+        if (btn.dataset.filter === filtro) {
+          btn.className = 'filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-indigo-600 text-white';
+        } else {
+          btn.className = 'filter-chip px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition bg-slate-900 text-slate-300 border border-slate-800';
+        }
+      });
+      renderLista();
+    }
+
+    // Renderizado de las tarjetas con toda la información
+    function renderLista() {
+      const container = document.getElementById('cardsContainer');
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const sortType = document.getElementById('sortSelect').value;
+      const favs = getFavoritos();
+
+      container.innerHTML = '';
+
+      let lista = entidades.filter(item => {
+        const matchesQuery = item.name.toLowerCase().includes(query);
+        if (!matchesQuery) return false;
+
+        const isFav = favs.includes(item.id);
+        const isShow = item.entityType === 'SHOW' || (item.showtimes && item.showtimes.length > 0);
+        const isOpen = item.status === 'OPERATING';
+        const hasSingle = item.queue?.SINGLE_RIDER?.waitTime !== undefined && item.queue?.SINGLE_RIDER?.waitTime !== null;
+
+        if (filtroActivo === 'favs') return isFav;
+        if (filtroActivo === 'shows') return isShow;
+        if (filtroActivo === 'attractions') return !isShow;
+        if (filtroActivo === 'open') return isOpen;
+        if (filtroActivo === 'single') return hasSingle;
+        return true;
+      });
+
+      // Ordenación
+      lista.sort((a, b) => {
+        // En vista "Todos", los favoritos suben al principio
+        if (filtroActivo === 'all') {
+          const favA = favs.includes(a.id) ? 1 : 0;
+          const favB = favs.includes(b.id) ? 1 : 0;
+          if (favA !== favB) return favB - favA;
+        }
+
+        const waitA = a.queue?.STANDBY?.waitTime ?? -1;
+        const waitB = b.queue?.STANDBY?.waitTime ?? -1;
+
+        if (sortType === 'waitDesc') return waitB - waitA;
+        if (sortType === 'waitAsc') return (waitA === -1 ? 999 : waitA) - (waitB === -1 ? 999 : waitB);
+        if (sortType === 'alpha') return a.name.localeCompare(b.name);
+        return 0;
+      });
+
+      if (lista.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 text-xs text-slate-500">No se encontraron atracciones o espectáculos.</div>';
         return;
       }
 
-      filtradas.forEach(item => {
-        const wait = item.queue?.STANDBY?.waitTime;
+      lista.forEach(item => {
+        const isFav = favs.includes(item.id);
+        const isShow = item.entityType === 'SHOW' || (item.showtimes && item.showtimes.length > 0);
         const status = item.status || 'CLOSED';
+        const wait = item.queue?.STANDBY?.waitTime;
+        const singleWait = item.queue?.SINGLE_RIDER?.waitTime;
+        const paidReturn = item.queue?.PAID_RETURN_TIME;
+        const boarding = item.queue?.BOARDING_GROUP;
 
-        let badge = '';
+        // Formateo de insignia de estado / cola
+        let badgeHtml = '';
         if (status === 'OPERATING') {
           if (wait !== undefined && wait !== null) {
-            const colorClass = wait > 45 ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' :
-                               wait > 20 ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                               'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-            badge = `<div class="text-right">
-                       <span class="text-base font-bold px-2.5 py-1 rounded-lg border ${colorClass}">${wait} min</span>
-                     </div>`;
+            const colorClass = wait > 45 ? 'bg-rose-500/15 text-rose-300 border-rose-500/30' :
+                               wait > 20 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' :
+                               'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+            badgeHtml = `<div class="text-right">
+                          <span class="text-base font-bold px-2.5 py-1 rounded-xl border ${colorClass} inline-block">${wait} min</span>
+                         </div>`;
           } else {
-            badge = `<span class="text-xs px-2 py-0.5 rounded bg-emerald-900/40 text-emerald-300">Abierta</span>`;
+            badgeHtml = `<span class="text-xs px-2.5 py-1 rounded-xl bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">Abierta</span>`;
           }
         } else if (status === 'DOWN') {
-          badge = `<span class="text-xs px-2 py-0.5 rounded bg-amber-900/40 text-amber-300">Interrumpida</span>`;
+          badgeHtml = `<span class="text-xs px-2 py-0.5 rounded-lg bg-amber-950/60 text-amber-300 border border-amber-800/50">En pausa</span>`;
+        } else if (status === 'REFURBISHMENT') {
+          badgeHtml = `<span class="text-xs px-2 py-0.5 rounded-lg bg-blue-950/60 text-blue-300 border border-blue-800/50">Mantenimiento</span>`;
         } else {
-          badge = `<span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">Cerrada</span>`;
+          badgeHtml = `<span class="text-xs px-2 py-0.5 rounded-lg bg-slate-900 text-slate-500 border border-slate-800">Cerrada</span>`;
+        }
+
+        // Fila extra: Single Rider, Disney Premier Access / Pase Rápido, Virtual Queue
+        let extraInfoHtml = '';
+        const pills = [];
+
+        if (singleWait !== undefined && singleWait !== null) {
+          pills.push(`<span class="inline-flex items-center gap-1 text-[11px] bg-indigo-950/50 text-indigo-300 border border-indigo-800/40 px-2 py-0.5 rounded-md">⚡ Single: <b>${singleWait}m</b></span>`);
+        }
+        if (paidReturn && paidReturn.returnStart) {
+          const horaIni = formatHora(paidReturn.returnStart);
+          const horaFin = paidReturn.returnEnd ? formatHora(paidReturn.returnEnd) : '';
+          const precio = paidReturn.price?.formatted ? ` • ${paidReturn.price.formatted}` : '';
+          pills.push(`<span class="inline-flex items-center gap-1 text-[11px] bg-purple-950/50 text-purple-300 border border-purple-800/40 px-2 py-0.5 rounded-md">🎟️ Pase: ${horaIni}-${horaFin}${precio}</span>`);
+        }
+        if (boarding && boarding.currentGroupStart) {
+          pills.push(`<span class="inline-flex items-center gap-1 text-[11px] bg-cyan-950/50 text-cyan-300 border border-cyan-800/40 px-2 py-0.5 rounded-md">👥 Grupos: ${boarding.currentGroupStart}–${boarding.currentGroupEnd || ''}</span>`);
+        }
+
+        // Pases de Espectáculos (Shows)
+        if (item.showtimes && item.showtimes.length > 0) {
+          const proximos = item.showtimes.slice(0, 4).map(st => formatHora(st.startTime)).join(', ');
+          pills.push(`<span class="text-[11px] text-amber-300/90 bg-amber-950/30 border border-amber-900/40 px-2 py-0.5 rounded-md">🎭 Pases hoy: ${proximos}</span>`);
+        }
+
+        if (pills.length > 0) {
+          extraInfoHtml = `<div class="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-slate-800/60">${pills.join('')}</div>`;
         }
 
         const card = document.createElement('div');
-        card.className = 'bg-slate-800 border border-slate-700/60 p-3 rounded-xl flex items-center justify-between gap-3 shadow-sm';
+        card.className = `bg-slate-900/80 border ${isFav ? 'border-amber-500/40' : 'border-slate-800/70'} p-3 rounded-2xl shadow-sm hover:border-slate-700 transition`;
         card.innerHTML = `
-          <div class="min-w-0">
-            <h3 class="font-medium text-sm text-slate-100 truncate">${item.name}</h3>
-            ${item.queue?.SINGLE_RIDER?.waitTime ? `<span class="text-[10px] text-indigo-400">Single Rider: ${item.queue.SINGLE_RIDER.waitTime}m</span>` : ''}
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-start gap-2.5 min-w-0">
+              <button onclick="toggleFavorito('${item.id}', event)" class="text-base mt-0.5 transition active:scale-125 focus:outline-none" title="Favorito">
+                ${isFav ? '⭐' : '☆'}
+              </button>
+              <div class="min-w-0">
+                <h3 class="font-medium text-sm text-slate-100 leading-snug line-clamp-2">${item.name}</h3>
+                <span class="text-[10px] text-slate-500 uppercase tracking-wider">${isShow ? 'Espectáculo' : 'Atracción'}</span>
+              </div>
+            </div>
+            ${badgeHtml}
           </div>
-          ${badge}
+          ${extraInfoHtml}
         `;
-        listContainer.appendChild(card);
+        container.appendChild(card);
       });
     }
 
-    // Cargar automáticamente al inicio
-    cargarTiempos();
+    function formatHora(isoStr) {
+      if (!isoStr) return '';
+      try {
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr;
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch {
+        return isoStr;
+      }
+    }
+
+    // Auto-refresco
+    function toggleAutoRefresh() {
+      const isChecked = document.getElementById('autoRefreshCheck').checked;
+      if (isChecked) {
+        autoRefreshTimer = setInterval(() => {
+          cargarLive(document.getElementById('parkSelect').value);
+        }, 60000);
+      } else {
+        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+      }
+    }
+
+    // Inicio automático
+    cargarTodo();
   </script>
 </body>
 </html>
